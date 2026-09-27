@@ -216,3 +216,13 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# prompt-pick-place
+PLAN.md
+assets/ycb/
+models/
+eval_results/
+*.engine
+*.plan
+*.onnx
+*.pt
