@@ -14,6 +14,9 @@ from ppp_common.mesh import read_obj  # noqa: E402
 
 
 def build_object_usd(obj_path, usd_path, name):
+    # USD prim names can't start with a digit (all YCB names do, e.g. "004_sugar_box");
+    # this is purely the in-file root prim name, unrelated to the object name used elsewhere.
+    name = name if (name[:1].isalpha() or name[:1] == '_') else '_' + name
     mesh = read_obj(obj_path)
     stage = Usd.Stage.CreateNew(usd_path)
     UsdGeom.SetStageUpAxis(stage, UsdGeom.Tokens.z)

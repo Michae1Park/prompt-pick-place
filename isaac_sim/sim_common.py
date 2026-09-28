@@ -26,6 +26,11 @@ from ycb_usd import ensure_object_usd  # noqa: E402
 PARK_X = -3.0  # objects not used in an episode wait on the floor behind the robot, out of view
 
 
+def safe_prim_name(name):
+    """USD prim names can't start with a digit (true of every YCB object name, e.g. "004_sugar_box")."""
+    return name if (name[:1].isalpha() or name[:1] == '_') else '_' + name
+
+
 def quat_wxyz(R):
     return tf.xyzw_to_wxyz(tf.mat_to_quat(R))
 
@@ -87,7 +92,7 @@ class SimScene:
 
     def _add_object(self, name, index):
         usd = ensure_object_usd(self.cfg, name)
-        path = '/World/Objects/' + name
+        path = '/World/Objects/' + safe_prim_name(name)
         add_reference_to_stage(usd, path)
         stage = get_current_stage()
         root = stage.GetPrimAtPath(path)
