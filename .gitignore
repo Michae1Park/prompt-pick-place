@@ -226,3 +226,9 @@ eval_results/
 *.plan
 *.onnx
 *.pt
+third_party/
+perception_demo/*/output/
+perception_demo/*/weights/
+perception_demo/*/demo_data/
+install/
+log/
