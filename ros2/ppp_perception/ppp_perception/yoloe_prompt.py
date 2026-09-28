@@ -36,7 +36,7 @@ def _visual_pe(model, image, bbox, device):
         model.predict(image, visual_prompts=vp, predictor=YOLOEVPSegPredictor,
                       return_vpe=True, device=device, verbose=False)
         vpe = model.predictor.vpe
-    except (TypeError, AttributeError):
+    except Exception:
         # fallback: refer_image path sets the embedding as the model's class embedding
         model.predict(image, refer_image=image, visual_prompts=vp, predictor=YOLOEVPSegPredictor,
                       device=device, verbose=False)
