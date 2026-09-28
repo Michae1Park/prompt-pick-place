@@ -62,6 +62,18 @@ def build_visual_prompt_model(weights, prompts, device='cuda:0'):
     return model
 
 
+def build_text_prompt_model(weights, texts, device='cuda:0'):
+    """texts: list of open-vocabulary class-name strings (no reference image needed). Returns a
+    YOLOE model whose classes are those texts -- same detect()-compatible model as
+    build_visual_prompt_model(), just prompted by text instead of an example image."""
+    from ultralytics import YOLOE
+
+    model = YOLOE(weights)
+    model.set_classes(texts, model.get_text_pe(texts))
+    model.predictor = None
+    return model
+
+
 def load_detector(weights, engine, names, prompt_path_fn, device='cuda:0'):
     """TensorRT engine (classes baked in at export) if given, else build from the prompt images."""
     if engine:
