@@ -83,7 +83,7 @@ depth + up ─► points + normals ─► horizontal points ─► sequential RA
 | S0–S2 | −0.75 (floor) | open | out of reach | seen past the shelf's sides |
 | S3 | 0.00 (0.00) | 320 mm | 2 | bottom level: only its front strip is visible; items' fronts occupied, behind them unknown |
 | S4 | 0.00 | open | 0 | the table corner — too little of it seen |
-| S5 | 0.32 (0.32) | 320 mm | 3 | middle level, around the soup can — most room (125 mm) → **best** |
+| S5 | 0.32 (0.32) | 320 mm | 3 | middle level, around the foam brick — most room (125 mm) → **best** |
 | S6 | 0.64 (0.64) | open | 3 | top of the shelf |
 
 All three board heights match the ground truth to the millimetre.
