@@ -3,6 +3,7 @@
 YOLOE has no fixed class list: each class is an embedding vector, and set_classes() swaps them in.
   text   : MobileCLIP encodes the phrase                          -> build_text_prompt_model()
   visual : YOLOE pools its own features inside a box on a ref image -> build_visual_prompt_model()
+  none   : *-seg-pf.pt weights ship a fixed 4585-class vocabulary   -> build_prompt_free_model()
 One forward pass then scores every image region against every class.
 """
 import json
@@ -59,6 +60,15 @@ def build_text_prompt_model(weights, texts, device='cuda:0'):
         model.set_classes(texts, model.get_text_pe(texts))
     os.chdir(cwd)
     return model
+
+
+def build_prompt_free_model(weights):
+    """weights: a *-seg-pf.pt file. Returns a YOLOE model with its built-in vocabulary; set_classes() is not allowed."""
+    from ultralytics import YOLOE
+
+    if not weights.endswith('-pf.pt'):
+        raise ValueError('prompt-free needs *-seg-pf.pt weights, got %s' % weights)
+    return YOLOE(weights_path(weights))
 
 
 def detect_kwargs(cfg):
