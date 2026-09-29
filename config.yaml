@@ -50,9 +50,9 @@ sim:                          # Isaac Sim scene (sim/scene.py). World frame: z u
     - {name: 004_sugar_box,       level: 0, x: -0.14, yaw_deg: 10}   # x along the shelf width, from its centre
     - {name: 010_potted_meat_can, level: 0, x:  0.16, yaw_deg: -20}
     - {name: 005_tomato_soup_can, level: 1, x:  0.02, yaw_deg: 0}
-  shelf_camera:               # 2nd camera (no rig drawn), looking into the shelf from the robot's left, clear of the arm
-    eye: [-0.40, 0.25, 0.85]
-    target: [0.0, -0.58, 0.30]
+  wrist_camera:               # eye-in-hand camera on the Franka hand (stage 5): the arm moves to look_joints for the shelf shot
+    mount_xyz: [0.05, 0.0, 0.0]   # camera centre in the panda_hand frame; it looks along the hand's +z (the fingers' direction)
+    look_joints: [-2.26, -0.884, 0.014, -1.301, 0.484, 1.027, 2.063]   # IK: camera at (0, -0.05, 0.95) looking at the shelf centre
   colors:                     # sRGB 0-1 (as in a colour picker; converted to linear for USD)
     floor: [0.10, 0.12, 0.16]
     backdrop: [0.55, 0.65, 0.80]   # dome light colour = what you see behind the scene
