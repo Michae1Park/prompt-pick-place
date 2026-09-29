@@ -80,7 +80,7 @@ $PY pipeline/interactive_detect.py --prompt my_obj ref.png 120,80,340,410 --scen
 |---|---|---|
 | 1 | mustard0 frame 736, prompt from frame 0 | `006_mustard_bottle` score **0.51** ([image](docs/pipeline_demo/01_detection.png)) |
 | 2 | stage 1 mask | 6-DoF pose overlay ([image](docs/pipeline_demo/02_pose_overlay.png)) |
-| 3 | depth | plane 88k / 132k inliers; grid 140×50 cells, 4632 free / 322 occupied / 2046 unknown ([image](docs/pipeline_demo/03_occupancy.png)) |
+| 3 | depth | plane 88k / 132k inliers; grid 140×50 cells, 4634 free / 321 occupied / 2045 unknown ([image](docs/pipeline_demo/03_occupancy.png)) |
 | 4 | pose + mesh | **2 / 8** candidates feasible; best is 8.5° from vertical ([image](docs/pipeline_demo/04_grasp_candidates.png)) |
 | 1 (multi-object) | tomato soup can / mustard bottle prompts | 0.71 / 0.55, no false positives on cracker box, banana, drill ([image](docs/pipeline_demo/multi_object/overview.png)) |
 
