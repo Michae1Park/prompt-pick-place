@@ -15,6 +15,25 @@ python pipeline/interactive_pose.py --help
 ```
 Prints a report, saves `output/pose/<tag>.{png,json}`, opens the image as a Cursor tab.
 
+## Render the mesh
+
+`pipeline/render_mesh.py`: the mesh as FoundationPose sees it (its own renderer). Runs itself in the container.
+
+```bash
+python pipeline/render_mesh.py                   # 4 views: texture | shape | vertices | triangles | triangles x5
+python pipeline/render_mesh.py --views 8 --elev 60
+python pipeline/render_mesh.py --pose play       # mesh at output/pose/play.json's pose, over the scene
+```
+
+| Mode | Output | Columns |
+|---|---|---|
+| views | `output/mesh/views.png` | texture (+ axes x red / y green / z blue) \| shape (grey, no texture) \| vertices (all 8,423, front + back) \| triangle edges facing the camera \| same, 5× zoom |
+| `--pose TAG` | `output/mesh/pose_<TAG>.png` | scene \| texture over scene \| shape |
+
+**What's in the mesh file** (`textured.obj`, YCB google_16k): 8,423 vertices + 16,384 triangles + one 4096×4096 texture.
+Each triangle = 3 vertex indices (`mesh.faces`); edges are ~2.5 mm (median), irregular, denser where the surface curves.
+The vertices are the *simplified surface*, not the raw scanner points — YCB ships the fused scan clouds separately.
+
 ## Data
 
 Same scene as stage 1: `data/multi_object_scene/`. Mustard bottle only.
