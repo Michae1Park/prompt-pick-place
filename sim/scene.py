@@ -246,8 +246,8 @@ def drop_all(objects, rng):
     return yaws
 
 
-def add_wrist_camera(cam_cfg, mount_xyz):
-    """Camera on the Franka hand (moves with the arm), looking along the hand's +z. -> prim path."""
+def add_wrist_camera(cam_cfg, wcfg):
+    """RealSense D455 on the Franka hand (moves with the arm), looking along the hand's +z. -> camera prim path."""
     w, h, f = cam_cfg['width'], cam_cfg['height'], cam_cfg['fx']
     path = '/World/Franka/panda_hand/WristCamera'
     cam = UsdGeom.Camera.Define(get_current_stage(), path)
@@ -256,16 +256,21 @@ def add_wrist_camera(cam_cfg, mount_xyz):
     cam.CreateVerticalApertureAttr(ha * h / w)
     cam.CreateFocalLengthAttr(f * ha / w)
     cam.CreateClippingRangeAttr(Gf.Vec2f(0.05, 10.0))
-    T_hand_usd = tf.make_T(t=mount_xyz) @ USD_FROM_CV     # OpenCV camera axes = hand axes
-    UsdGeom.Xformable(cam).AddTransformOp().Set(Gf.Matrix4d(*T_hand_usd.T.flatten()))
-    # visible body (a camera prim itself renders nothing): a D405-sized box, 42 x 42 x 23 mm, dark grey, visual only,
-    # entirely behind the optical centre so it never appears in its own image
-    body = UsdGeom.Cube.Define(get_current_stage(), '/World/Franka/panda_hand/WristCameraBody')
-    body.CreateSizeAttr(1.0)
-    body.CreateDisplayColorAttr([Gf.Vec3f(0.06, 0.06, 0.07)])
-    xf = UsdGeom.Xformable(body)
-    xf.AddTranslateOp().Set(Gf.Vec3d(mount_xyz[0], mount_xyz[1], mount_xyz[2] - 0.0125))
-    xf.AddScaleOp().Set(Gf.Vec3f(0.042, 0.042, 0.023))
+    T_hand_cam = tf.make_T(tf.rot_z(np.deg2rad(wcfg['mount_yaw_deg']))[:3, :3], wcfg['mount_xyz'])
+    UsdGeom.Xformable(cam).AddTransformOp().Set(Gf.Matrix4d(*(T_hand_cam @ USD_FROM_CV).T.flatten()))
+
+    # the camera prim renders nothing: add the D455 model, placed like the tripod one (colour lens on the optical
+    # centre), visual only - no rigid body, no colliders, so it can't disturb the arm
+    stage = get_current_stage()
+    body_path = '/World/Franka/panda_hand/WristD455'
+    add_reference_to_stage(get_assets_root_path() + RS_USD, body_path)
+    UsdPhysics.RigidBodyAPI(stage.GetPrimAtPath(body_path + '/RSD455')).CreateRigidBodyEnabledAttr(False)
+    for prim in Usd.PrimRange(stage.GetPrimAtPath(body_path), Usd.TraverseInstanceProxies()):
+        if prim.HasAPI(UsdPhysics.CollisionAPI) and not prim.IsInstanceProxy():
+            UsdPhysics.CollisionAPI(prim).CreateCollisionEnabledAttr(False)
+    xf = UsdGeom.Xformable(stage.GetPrimAtPath(body_path))
+    xf.ClearXformOpOrder()
+    xf.AddTransformOp().Set(Gf.Matrix4d(*(T_hand_cam @ T_CAM_RS).T.flatten()))
     return path
 
 
@@ -344,7 +349,7 @@ def main():
     add_camera_rig(T_world_cam, -cfg['table_size'][2], cam_cfg['rig'])
 
     wcfg = cfg['wrist_camera']
-    shelf_path = add_wrist_camera(cam_cfg, wcfg['mount_xyz'])   # on the robot's wrist (stage 5); follows the arm
+    shelf_path = add_wrist_camera(cam_cfg, wcfg)   # on the robot's wrist (stage 5); follows the arm
 
     if not args.livestream:
         root = args.out or os.path.join(REPO, 'data', 'sim')
