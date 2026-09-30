@@ -72,18 +72,45 @@ Installing accepts the [NVIDIA Omniverse EULA](https://docs.omniverse.nvidia.com
 
 After changing code: C++, messages or launch files → `ros2/build.sh`; Python → nothing (symlinked).
 
-**Deployment (Docker).** Code and dependencies baked into two images; needs only the driver and Docker
-(`scripts/install.sh driver docker`):
+**Deployment (Docker).** The code and all its dependencies are baked into two images, so the workstation needs only
+the NVIDIA driver and Docker.
+
+**1 · Install the driver and Docker** (after cloning the repo as above):
 
 ```bash
-docker compose -f docker/compose.yaml build          # ~1 h the first time; again after every code change
-docker compose -f docker/compose.yaml up             # sim + robot + FoundationPose + prompt UI on :8088
-docker compose -f docker/compose.yaml run --rm task  # or, instead of the UI: every target, scripted
+scripts/install.sh driver docker
 ```
 
-`SIM_ARGS=--livestream` before `up` streams the sim's viewport ([below](#sim-viewport-livestream-webrtc)). First
-start: ~2 min for the TensorRT engines and a few minutes for Isaac Sim's shaders, both kept in Docker volumes.
-Develop natively: rebuilding the image for each change is slow.
+Reboot if it installed the driver, and log out and in after the Docker step.
+
+**2 · Build**, from the repo root (~1 h the first time; again after every code change):
+
+```bash
+docker compose -f docker/compose.yaml build
+```
+
+**3 · Run: option A *or* option B**, never both (they drive the same arm). Same options as in
+[Run the robot](#run-the-robot).
+
+*Option A · Prompt UI.* Starts the sim, robot, FoundationPose and the prompt UI; then open **http://localhost:8088**.
+
+```bash
+docker compose -f docker/compose.yaml up
+```
+
+*Option B · Scripted.* Starts the same without the UI; once it is ready, a second terminal runs the task. It picks
+every target one after the other, prints a summary and exits.
+
+```bash
+docker compose -f docker/compose.yaml up robot       # terminal 1
+docker compose -f docker/compose.yaml run --rm task  # terminal 2, once terminal 1 is ready
+```
+
+| Good to know | |
+|---|---|
+| **Sim viewport** | Put `SIM_ARGS=--livestream` in front of `up` (either option), e.g. `SIM_ARGS=--livestream docker compose -f docker/compose.yaml up`, then connect as [below](#sim-viewport-livestream-webrtc) |
+| **First start** | ~2 min to build the TensorRT engines and a few more for Isaac Sim's shaders. Both are kept in Docker volumes, so later starts are fast |
+| **Changing code** | Every change needs an image rebuild (step 2), which is slow. Develop natively; use Docker to deploy |
 
 ## Vision playgrounds (each stage on its own)
 
