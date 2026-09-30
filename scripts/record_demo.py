@@ -4,8 +4,9 @@ while the sim records its own view. scripts/demo_gif.py then stacks the two and 
   1  .venv-sim/bin/python sim/ros_cell.py --record output/rec/sim
   2  source ros2/install/setup.bash && ros2 launch ppp_bringup all.launch.py eval:=true
   3  source ros2/install/setup.bash && .venv/bin/python ui/prompt_ui.py
-  4  .venv/bin/python scripts/record_demo.py              (needs: .venv/bin/pip install playwright; uses the system Chrome)
-  5  .venv/bin/python scripts/demo_gif.py
+  4  .venv/bin/python scripts/record_demo.py              (needs: .venv/bin/pip install playwright && .venv/bin/python -m playwright install ffmpeg;
+                                                        uses the system Chrome)
+  5  .venv/bin/python scripts/demo_gif.py [--motion-speed 8]
 
 Writes output/rec/ui/*.webm and output/rec/events.json (wall times of the page start and of each prompt).
 """
@@ -64,7 +65,7 @@ def main():
         ctx = browser.new_context(viewport=SIZE, record_video_dir=ui_dir, record_video_size=SIZE)
         page = ctx.new_page()
         mark('page')                                   # the video starts here
-        page.goto(args.url)
+        page.goto(args.url, wait_until='domcontentloaded')   # 'load' never fires: the camera views are endless MJPEG streams
         page.wait_for_timeout(3000)
 
         # 1: text
