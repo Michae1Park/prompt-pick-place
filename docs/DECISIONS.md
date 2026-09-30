@@ -44,6 +44,7 @@ along the way. Newest entries go at the bottom of each list.
 | [D-029](#d-029) | 2026-09-30 | Python nodes run on the `.venv` with Jazzy sourced; pybind11 from the `.venv` | Accepted |
 | [D-030](#d-030) | 2026-09-30 | Recovery never drops an object somewhere random | Accepted |
 | [D-031](#d-031) | 2026-09-30 | Place in the most natural stable rest pose that fits: upright first (supersedes the orientation rule of D-024) | Accepted |
+| [D-032](#d-032) | 2026-09-30 | `ros_cell.py --livestream`: watch the live ROS cell in the WebRTC client | Accepted |
 
 ### D-001
 **Keep YOLOE-seg (not OWLv2 + SAM2).** One `ultralytics` model gives box + mask in a single pass and was
@@ -259,6 +260,11 @@ the yaw that points a side grasp into the shelf, else trying quarter turns. Resu
 a bottle too tall for the free space would be laid down. Possible later: a VLM prior for which poses are acceptable
 for unfamiliar objects (e.g. keep containers of liquid upright).
 
+### D-032
+**`ros_cell.py --livestream`** enables `omni.kit.livestream.app` as in `scene.py`, so the live cell can be
+watched in the Isaac Sim WebRTC Streaming Client while the whole ROS pipeline runs (I-013 turned out not to
+apply). Foxglove (D-017) stays the way to see ROS data: detections, planned paths, TF.
+
 ## Issues
 
 | ID | Date | Issue | Status |
@@ -275,7 +281,7 @@ for unfamiliar objects (e.g. keep containers of liquid upright).
 | [I-010](#i-010) | 2026-09-29 | Isaac ROS FoundationPose depth encoding not confirmed | Resolved |
 | [I-011](#i-011) | 2026-09-29 | Known apt conflict installing Isaac ROS FoundationPose in its container | Resolved by D-022 |
 | [I-012](#i-012) | 2026-09-29 | Python ROS nodes need system `rclpy` and `.venv` packages together | Resolved by D-029 |
-| [I-013](#i-013) | 2026-09-29 | WebRTC livestream expected to conflict with ROS camera publishing | Open |
+| [I-013](#i-013) | 2026-09-29 | WebRTC livestream expected to conflict with ROS camera publishing | Resolved (no conflict, D-032) |
 | [I-014](#i-014) | 2026-09-29 | Two tomato cans in the scene: "tomato can" prompt will match both | Resolved by D-021 |
 | [I-015](#i-015) | 2026-09-29 | Sim depth is perfect and masks exact: pose results are a best case | Open |
 | [I-016](#i-016) | 2026-09-29 | FoundationPose run-to-run spread on the same frame | Noted |
@@ -292,6 +298,8 @@ for unfamiliar objects (e.g. keep containers of liquid upright).
 | [I-027](#i-027) | 2026-09-30 | Mustard side grasps blocked by neighbours at some yaws; no regrasp | Open |
 | [I-028](#i-028) | 2026-09-30 | Small MoveIt/PhysX mismatches: SRDF virtual joint, start state past a joint limit, sim lag | Resolved |
 | [I-029](#i-029) | 2026-09-30 | Held objects dropped in transit: gripper controller released the squeeze on a stall; shelf items not in MoveIt | Resolved |
+| [I-030](#i-030) | 2026-09-30 | A second `ros_cell.py` started while the first still ran: two `/clock`s, TF_OLD_DATA flood | Resolved |
+| [I-031](#i-031) | 2026-09-30 | Orphaned step-2 nodes from an earlier run: two `move_group`s, every execute aborted | Workaround |
 
 ### I-001
 Python fails with errors ordinary code can't produce: `unknown opcode`, `invalid SRE code`, a bogus
@@ -355,6 +363,10 @@ Phase 0.
 ### I-013
 Isaac's ROS camera publishers are built on Replicator, the same path that hangs while streaming
 (I-002). Expect to use Foxglove instead of the WebRTC stream while ROS runs (D-017).
+**Resolved (2026-09-30):** it doesn't happen. With `ros_cell.py --livestream` both cameras still publish at
+~9 Hz (10 Hz target) at real-time factor 1. The ROS camera path doesn't block the way `scene.py`'s
+`orchestrator.step()` / `get_data()` do. See [D-032](#d-032). (`ros2 topic hz` on the raw images showed ~1 Hz: that
+is the Python CLI deserialising 1280×720 images, not the sim. Count with `raw=True` instead.)
 
 ### I-014
 The scene has a tomato can on the table (a demo target) **and** one on shelf level 1 (stage 5 obstacle).
@@ -440,6 +452,19 @@ detects a stall, which takes the squeeze off (its stall detection fires only now
 arm moves at 20 % speed while carrying. Also, the items on the shelf were real in the sim but unknown to MoveIt, so
 motions into the shelf swept the held object through them: `place_node` now returns what isn't a support
 (minus the boards' own edges, already modelled) and it goes into the planning scene as voxels (`shelf_clutter`).
+
+### I-030
+Restarting the sim with `--livestream` without stopping the first one left two sims running, both publishing
+`/clock` (sim time jumping between ~53 s and ~1336 s) and running their own `controller_manager`. Every node
+logged `TF_OLD_DATA`, and MoveIt and the task couldn't run. **Fix:** `ros_cell.py` now exits at start if
+`/clock` already has a publisher. Restarting the sim still needs step 2 restarted too (I-026).
+
+### I-031
+The task scanned the shelf, then every move failed (`unknown goal response`, `Execute request aborted`,
+`execution to home failed`, 0/2 placed). A second copy of step 2 (`robot`, `moveit` and `perception` launches,
+reparented to init) was still running from an earlier session, along with two `gt_pose_stub.py` scratch
+publishers. Two `move_group`s answered the same `/move_action` goal. **Workaround:** before step 2, check that
+`ros2 node list | sort | uniq -d` prints nothing, and stop leftovers with `pgrep -af "ros2 launch|move_group"`.
 
 | ID | Question | Notes |
 |---|---|---|

@@ -74,6 +74,16 @@ source ros2/install/setup.bash && ros2 launch ppp_bringup all.launch.py eval:=tr
 source ros2/install/setup.bash && ros2 launch ppp_bringup task.launch.py              # pick both targets -> shelf
 ```
 
+To watch from another machine:
+
+| View | How |
+|---|---|
+| **Sim viewport** | Add `--livestream` to step 1, then connect the Isaac Sim WebRTC Streaming Client to the workstation's IP |
+| **ROS data** (detections, planned paths, TF) | Add `foxglove:=true` to step 2, then open `ws://<workstation-ip>:8765` in Foxglove |
+
+Run only one sim at a time: `ros_cell.py` refuses to start if another one is already publishing `/clock`. After
+restarting the sim, restart step 2 as well, since running nodes keep the old sim time.
+
 Full setup (FoundationPose container, Isaac Sim venv): [docs/SIM.md](docs/SIM.md) and the stage guides.
 
 ## Documentation

@@ -111,6 +111,8 @@ The workstation renders and sends a video stream over WebRTC; the laptop only di
 - Ports: TCP 49100 (signalling) + UDP 47998 (video). The workstation firewall is off. The laptop must be on
   the same LAN (or a VPN into it): UDP can't go through the Cursor SSH tunnel.
 - Only one client at a time. Stop the server with Ctrl+C in its terminal.
+- **Live ROS cell:** `.venv-sim/bin/python sim/ros_cell.py --livestream` streams the same way while the ROS pipeline
+  runs. Unlike `scene.py --livestream`, it isn't view-only: the ROS cameras keep publishing (D-032).
 
 ## Knobs
 

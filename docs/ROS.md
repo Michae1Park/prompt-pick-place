@@ -20,8 +20,12 @@ Workstation, one Cursor terminal each (Jazzy is sourced by `.bashrc`).
 | — | N randomised episodes | `.venv/bin/python sim/episodes.py -n 10` → `output/episodes.json` |
 | — | Watch the tree live | Groot2 → connect to `localhost:1667` while the task runs |
 | — | View in Foxglove (laptop) | add `foxglove:=true` to step 2, open `ws://192.168.33.118:8765` |
+| — | Watch the sim (laptop) | add `--livestream` to step 1, Isaac Sim WebRTC Streaming Client → `192.168.33.118` ([SIM.md](SIM.md#watching-the-scene-from-the-laptop-livestream)) |
 
-Restarting the sim restarts sim time at 0: restart step 2 as well (nodes keep old TF otherwise).
+Restarting the sim restarts sim time at 0: restart step 2 as well (nodes keep old TF otherwise). Stop the old sim
+first: `ros_cell.py` exits if another sim already publishes `/clock` (two clocks flood TF_OLD_DATA, I-030).
+If every move aborts with `unknown goal response`, an old step 2 is still running: `ros2 node list | sort | uniq -d`
+must print nothing (I-031).
 
 ## Setup (once)
 
