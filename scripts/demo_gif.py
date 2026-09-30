@@ -1,6 +1,11 @@
-"""Stack the prompt UI recording (top) and the sim's view (bottom) on one timeline, speed it up, and make GIFs (D-045).
+"""Stack the sim's view (top) and the prompt UI recording (bottom) on one timeline, speed it up, and make GIFs (D-045).
 
-  .venv/bin/python scripts/demo_gif.py [--speeds 2 3 4] [--width 800] [--fps 10]
+  .venv/bin/python scripts/demo_gif.py [--speeds 2 3 4] [--width 800] [--fps 10] [--colors 256] [--dither bayer]
+  .venv/bin/python scripts/demo_gif.py --motion-speed 8 [--prompt-speed 1.5] [--hold 4]
+
+--motion-speed makes one GIF with a variable speed instead (D-046): the prompting (page load, typing / choosing the
+image, and --hold s after Go for the detection) at --prompt-speed, each task at --motion-speed.
+For a README GIF under 10 MB: --width 640 --colors 64 --dither none.
 
 Inputs from scripts/record_demo.py and sim/ros_cell.py --record: output/rec/{ui/*.webm, sim/<wall ms>.jpg,
 events.json}. The sim frames are named by wall time, so they line up with the page's video (which starts at
@@ -31,13 +36,36 @@ def sim_concat(sim_dir, t0, t1, path):
         f.write("file '%s'\n" % frames[-1][1])   # the concat demuxer ignores the last duration otherwise
 
 
+def badge(speed):
+    """drawtext filter for the "3×" badge in the bottom right corner."""
+    if not os.path.isfile(FONT):
+        return 'null'
+    return ("drawtext=fontfile=%s:text='%g×':x=w-tw-14:y=h-th-12:fontsize=26:fontcolor=white:"
+            "box=1:boxcolor=black@0.55:boxborderw=8" % (FONT, speed))
+
+
+def segments(ev, t0, end, hold, prompt_speed, motion_speed):
+    """[(start, end, speed)] in video time: the prompting at prompt_speed, the tasks at motion_speed."""
+    marks = [0.0, ev['text_go'] - t0 + hold, ev['text_done'] - t0, ev['image_go'] - t0 + hold,
+             ev['image_done'] - t0, end]
+    for i in range(1, len(marks)):
+        marks[i] = min(max(marks[i], marks[i - 1]), end)
+    speeds = [prompt_speed, motion_speed, prompt_speed, motion_speed, prompt_speed]
+    return [(a, b, v) for a, b, v in zip(marks, marks[1:], speeds) if b - a > 0.05]
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     ap.add_argument('--rec', default=os.path.join(REPO, 'output', 'rec'))
     ap.add_argument('--speeds', type=float, nargs='+', default=[2, 3, 4])
     ap.add_argument('--width', type=int, default=800)
     ap.add_argument('--fps', type=int, default=10)
+    ap.add_argument('--colors', type=int, default=256, help='GIF palette size (fewer: smaller file)')
+    ap.add_argument('--dither', default='bayer', choices=['bayer', 'none'], help='none: smaller file, some banding')
     ap.add_argument('--lead', type=float, default=2.5, help='s after the page opened to start at (page loading)')
+    ap.add_argument('--motion-speed', type=float, help='variable speed: the tasks at this speed (one GIF)')
+    ap.add_argument('--prompt-speed', type=float, default=1.5, help='variable speed: the prompting at this speed')
+    ap.add_argument('--hold', type=float, default=4, help='variable speed: s after Go still at --prompt-speed')
     args = ap.parse_args()
     with open(os.path.join(args.rec, 'events.json')) as f:
         ev = json.load(f)
@@ -46,20 +74,32 @@ def main():
     concat = os.path.join(args.rec, 'sim_frames.txt')
     sim_concat(os.path.join(args.rec, 'sim'), t0, t1, concat)
 
-    for speed in args.speeds:
-        out = os.path.join(args.rec, 'demo_%gx.gif' % speed)
-        label = ("drawtext=fontfile=%s:text='%g×':x=w-tw-14:y=h-th-12:fontsize=26:fontcolor=white:"
-                 "box=1:boxcolor=black@0.55:boxborderw=8," % (FONT, speed)) if os.path.isfile(FONT) else ''
-        graph = (
-            '[0:v]fps=30,trim=start={lead},setpts=PTS-STARTPTS,scale={w}:-2:flags=lanczos[ui];'
-            '[1:v]fps=30,trim=start={lead},setpts=PTS-STARTPTS,scale={w}:-2:flags=lanczos[sim];'
-            '[ui][sim]vstack=shortest=1,setpts=PTS/{speed},fps={fps},{label}'
-            'split[a][b];[a]palettegen=stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle'
-        ).format(lead=args.lead, w=args.width, speed=speed, fps=args.fps, label=label)
+    stack = ('[0:v]fps=30,trim=start={lead},setpts=PTS-STARTPTS,scale={w}:-2:flags=lanczos[ui];'
+             '[1:v]fps=30,trim=start={lead},setpts=PTS-STARTPTS,scale={w}:-2:flags=lanczos[sim];'
+             '[sim][ui]vstack=shortest=1').format(lead=args.lead, w=args.width)
+    dither = 'bayer:bayer_scale=5' if args.dither == 'bayer' else 'none'
+    gif = ',fps={fps},split[a][b];[a]palettegen=max_colors={colors}:stats_mode=diff[p];' \
+          '[b][p]paletteuse=dither={dither}:diff_mode=rectangle'.format(fps=args.fps, colors=args.colors, dither=dither)
+    jobs = []
+    if args.motion_speed:
+        segs = segments(ev, t0 + args.lead, t1 - t0 - args.lead, args.hold, args.prompt_speed, args.motion_speed)
+        graph = stack + ',split=%d%s;' % (len(segs), ''.join('[s%d]' % i for i in range(len(segs))))
+        for i, (a, b, v) in enumerate(segs):
+            graph += '[s%d]trim=start=%.3f:end=%.3f,setpts=(PTS-STARTPTS)/%g,%s[c%d];' % (i, a, b, v, badge(v), i)
+        graph += ''.join('[c%d]' % i for i in range(len(segs))) + 'concat=n=%d:v=1:a=0' % len(segs) + gif
+        jobs.append(('demo_%gx-%gx.gif' % (args.prompt_speed, args.motion_speed), graph,
+                     sum((b - a) / v for a, b, v in segs)))
+    else:
+        for speed in args.speeds:
+            jobs.append(('demo_%gx.gif' % speed, stack + ',setpts=PTS/%g,%s' % (speed, badge(speed)) + gif,
+                         (t1 - t0 - args.lead) / speed))
+
+    for name, graph, secs in jobs:
+        out = os.path.join(args.rec, name)
         subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', webm,
                         '-f', 'concat', '-safe', '0', '-i', concat,
                         '-filter_complex', graph, out], check=True)
-        print('%s  %.1f MB' % (out, os.path.getsize(out) / 1e6), flush=True)
+        print('%s  ~%.0f s  %.1f MB' % (out, secs, os.path.getsize(out) / 1e6), flush=True)
 
 
 if __name__ == '__main__':
