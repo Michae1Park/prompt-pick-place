@@ -513,6 +513,9 @@ public:
       setOutput("preplace", pp.preplace);
       setOutput("place", pp.place);
       setOutput("depart", pp.depart);
+      // object pose once set down = hand at place, times the grasp seen from the object, inverted
+      ctx_->place_goal_pub->publish(to_msg(to_eigen(pp.place.pose) * to_eigen(pp.grasp.tcp_in_object).inverse(),
+                                           pp.place.header.frame_id));
       RCLCPP_INFO(log(), "plan: grasp %s, place at (%.3f, %.3f) on z %.2f, in %s (%zu left)", pp.grasp.face.c_str(),
                   pp.placement.point.point.x, pp.placement.point.point.y, pp.placement.point.point.z,
                   pp.approach.c_str(), q->size());

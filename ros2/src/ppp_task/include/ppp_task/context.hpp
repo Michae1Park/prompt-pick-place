@@ -12,6 +12,7 @@
 #include <moveit_msgs/srv/get_position_ik.hpp>
 #include <moveit_msgs/srv/get_state_validity.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
+#include <std_msgs/msg/string.hpp>
 
 #include <map>
 #include <memory>
@@ -40,6 +41,9 @@ struct Context
   rclcpp::Client<ppp_interfaces::srv::GetPlacements>::SharedPtr get_placements;
   rclcpp::Client<moveit_msgs::srv::GetPositionIK>::SharedPtr compute_ik;
   rclcpp::Client<moveit_msgs::srv::GetStateValidity>::SharedPtr check_state;
+  // for viewers only (the sim's overlay): the target being worked on ("" when done) and where it will be set down
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr target_pub;
+  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr place_goal_pub;
 
   std::map<std::string, std::vector<double>> named_joints;   // "home", "look" (from parameters)
   std::string base_frame = "panda_link0";

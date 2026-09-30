@@ -46,6 +46,8 @@ Context::Context(const rclcpp::Node::SharedPtr & n)
   get_placements = node->create_client<ppp_interfaces::srv::GetPlacements>("/place_node/get_placements");
   compute_ik = node->create_client<moveit_msgs::srv::GetPositionIK>("/compute_ik");
   check_state = node->create_client<moveit_msgs::srv::GetStateValidity>("/check_state_validity");
+  target_pub = node->create_publisher<std_msgs::msg::String>("~/target", rclcpp::QoS(1).transient_local());
+  place_goal_pub = node->create_publisher<geometry_msgs::msg::PoseStamped>("~/place_goal", 5);
   js_sub_ = node->create_subscription<sensor_msgs::msg::JointState>(
     "/joint_states", 10, [this](sensor_msgs::msg::JointState::ConstSharedPtr m) {
       std::lock_guard<std::mutex> l(js_mtx_);

@@ -70,6 +70,7 @@ int main(int argc, char ** argv)
       break;
     }
     RCLCPP_INFO(node->get_logger(), "===== %s =====", target.c_str());
+    ctx->target_pub->publish(std_msgs::msg::String().set__data(target));
     const auto t0 = node->now();
     auto bb = BT::Blackboard::create();   // shared by PickAndPlace and Recover (where the object was picked)
     bb->set("target", target);
@@ -89,6 +90,7 @@ int main(int argc, char ** argv)
       }
     }
     results.emplace_back(target, ok);
+    ctx->target_pub->publish(std_msgs::msg::String());   // done with it: viewers clear its overlay
   }
   int placed = 0;
   for (const auto & [t, ok] : results) {
