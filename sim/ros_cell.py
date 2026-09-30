@@ -217,7 +217,23 @@ def start_ros2_control(world, prim_path='/World/Franka'):
     print('[ros_cell] controller_manager up (%s)' % os.path.relpath(CONTROLLERS, REPO), flush=True)
 
 
+def refuse_second_clock(node, wait=2.0):
+    """Two sims both publishing /clock make sim time jump back and forth (TF_OLD_DATA everywhere, I-030)."""
+    t0 = time.monotonic()
+    while time.monotonic() - t0 < wait:                     # give DDS discovery a moment
+        rclpy.spin_once(node, timeout_sec=0.1)
+    n = node.count_publishers('/clock')
+    if n:
+        print('[ros_cell] /clock already has %d publisher(s): another sim is running. Stop it first '
+              '(pgrep -af ros_cell.py), then restart step 2 too.' % n, flush=True)
+        app.close()
+        sys.exit(1)                                          # Kit's exit hook takes a status code only
+
+
 def main():
+    rclpy.init()
+    node = rclpy.create_node('isaac_sim_cell')
+    refuse_second_clock(node)
     cfg = load_config()['sim']
     world, franka, objects, shelf_objects = build_scene(cfg)
     cam_cfg = cfg['camera']
@@ -226,8 +242,6 @@ def main():
     wrist_path = add_wrist_camera(cam_cfg, cfg['wrist_camera'])
     add_clock_graph()
 
-    rclpy.init()
-    node = rclpy.create_node('isaac_sim_cell')
     w, h = cam_cfg['width'], cam_cfg['height']
     cams = [RGBDPublisher(node, cam_path, '/camera', 'camera_color_optical_frame', K, w, h),
             RGBDPublisher(node, wrist_path, '/wrist_camera', 'wrist_camera_color_optical_frame', K, w, h)]
