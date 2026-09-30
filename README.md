@@ -9,6 +9,11 @@ put it — with no object-specific training and no prior model of the shelf.
 *Simulated cell (Isaac Sim 6.1): Franka Panda with lengthened fingers, a table of YCB objects, a metal pantry as the
 place target, a fixed RealSense D455 over the table, and a wrist-mounted D455 that looks into the shelf.*
 
+<img src="docs/demo.gif" width="100%" alt="Demo: the robot is prompted with the text 'the yellow bottle', then with an example image of a tomato soup can, and puts each on the shelf; the sim on top, the prompt UI below">
+
+*Demo: a text prompt, then an example image, from the [Prompt UI](#terminal-3-option-a--web-page). Prompting at 1.5×,
+robot motion at 8×.*
+
 ## Pipeline
 
 ![Pipeline: the prompt and two RGB-D cameras feed five stages (detect, pose, table, grasp, place); a grasp and a placement are chosen together, and the task manager executes the pick and the place with MoveIt 2](docs/pipeline.svg)

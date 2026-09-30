@@ -58,6 +58,7 @@ along the way. Newest entries go at the bottom of each list.
 | [D-043](#d-043) | 2026-09-30 | One FoundationPose for every object (mesh loaded per request); all five table objects are targets | Accepted |
 | [D-044](#d-044) | 2026-09-30 | One install script for development; Docker images for deployment only | Accepted |
 | [D-045](#d-045) | 2026-09-30 | Demo GIF: the prompt UI and the sim recorded separately, joined on wall time | Accepted |
+| [D-046](#d-046) | 2026-09-30 | Demo GIF at a variable speed: the prompting slow, the robot fast | Accepted |
 
 ### D-001
 **Keep YOLOE-seg (not OWLv2 + SAM2).** One `ultralytics` model gives box + mask in a single pass and was
@@ -451,6 +452,15 @@ writer thread keeps the sim loop to a copy). `scripts/record_demo.py` drives the
 (Playwright: a text prompt, then an example image) and records the page; `scripts/demo_gif.py` puts both on the page
 video's timeline (UI on top, sim below), speeds it up and writes GIFs with a palette per clip. Not the livestream: it
 stalls Replicator annotators ([D-032](#d-032)), and a screen recording of the WebRTC client would need the laptop.
+
+### D-046
+**Variable-speed demo GIF.** One speed for the whole clip ([D-045](#d-045)) can't fit two picks into 20–30 s while the
+prompting stays readable: at 4× the typing and the image choice flash past, and the clip is still ~45 s.
+`demo_gif.py --motion-speed N` cuts the clip at the `events.json` marks: the prompting (page load, typing or choosing the
+image, and `--hold` s after Go for the detection) runs at `--prompt-speed` (1.5×), each task at N. The corner badge shows
+the current speed. Plain `--speeds` still makes the uniform GIFs. The sim now goes on top and the UI below, and
+`--colors` / `--dither` shrink the file: a 26 s GIF is 30 MB at the defaults, 8.9 MB at `--width 640 --colors 64
+--dither none`.
 
 ## Issues
 
