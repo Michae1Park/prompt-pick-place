@@ -53,6 +53,7 @@ along the way. Newest entries go at the bottom of each list.
 | [D-038](#d-038) | 2026-09-30 | Keep only the necessary safety / reliability logic in the task | Accepted |
 | [D-039](#d-039) | 2026-09-30 | Vision reliability: vision nodes detect and report, the behavior tree decides | Proposed |
 | [D-040](#d-040) | 2026-09-30 | Shelf stays at its D-035 distance; STOMP joins the planners after "via home" | Accepted |
+| [D-041](#d-041) | 2026-09-30 | Floor-standing metal pantry, long narrow table, fixed camera re-aimed | Accepted |
 
 ### D-001
 **Keep YOLOE-seg (not OWLv2 + SAM2).** One `ultralytics` model gives box + mask in a single pass and was
@@ -386,6 +387,21 @@ replace "via home": it only bends the direct line locally, and 7 carries found n
 home. So the order is PTP → via home → STOMP → RRTConnect: straight line, straight lines through a hub pose, an
 optimizer, a sampler. RRTConnect is OMPL's bidirectional RRT. CHOMP was not added: like STOMP it optimizes the direct
 line, but needs a distance field of the scene. The four-planner order has not yet been re-measured at 0.47 m.
+
+### D-041
+**Metal pantry and a long, narrow table** (config.yaml `sim:`; boxes shared by the sim and MoveIt: `vision.shelf_boxes`).
+
+| | Before (D-035) | After |
+|---|---|---|
+| Shelf | 2 boards (0.05 / 0.45 m), side and back panels, open top | Pantry 2.05 m tall: 4 corner posts, boards at −0.35 / 0.05 / 0.45 / 0.95 / 1.30 m, open back and sides, steel material |
+| Table | 0.55 × 0.80 m (x 0.35–0.90) | 0.40 × 0.95 m (x 0.40–0.80, y −0.30–0.65) |
+| Items | targets 0.55–0.66 m out | same distances; clutter re-spaced along the table |
+| Fixed camera | eye (1.07, 0.42, 0.50), ~0.75 m from the targets | eye (1.15, 0.32, 0.64), 0.85–0.95 m: all five items in view. Tripod legs turned away from the table |
+
+The 0.45 m board now has a board above it. With that board at 0.85 m (0.38 m clear), 2 of 4 episodes had no
+collision-free carry onto 0.45 (once each target); at 0.95 m (0.48 m clear), 3 episodes: **mustard 3/3, tomato can
+3/3**, with placements on both the 0.05 and the 0.45 board. The wrist camera's look pose is unchanged; it sees the
+0.05 and 0.45 boards, not the ones above.
 
 ## Issues
 

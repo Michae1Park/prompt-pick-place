@@ -19,12 +19,12 @@ base, horizontal placements with the hand 0.1–0.6 m high. Moving the shelf fur
 |---|---|
 | Robot | Franka Panda on a 20 cm pedestal at the origin. Home faces between the table and the shelf (joint 1 at −45°) |
 | Gripper | Franka Hand with fingers **5 cm longer** than stock (a box continuing each finger, in the sim and in MoveIt's model), squeezing with **140 N** ([D-036](DECISIONS.md#d-036)) |
-| Table | 0.55 × 0.80 m in front of the robot (x 0.35–0.90 m, y −0.30–0.50 m), top at z = 0 |
-| Pick targets | `006_mustard_bottle` (upright, random yaw ±30°) and `005_tomato_soup_can` (**lying on its side**, any yaw), 0.55–0.66 m from the base |
+| Table | 0.40 × 0.95 m, long side along y, in front of the robot (x 0.40–0.80 m, y −0.30–0.65 m), top at z = 0 |
+| Pick targets | `006_mustard_bottle` (upright, random yaw ±30°) and `005_tomato_soup_can` (**lying on its side**, any yaw), 0.55–0.65 m from the base |
 | Clutter | Sugar box, foam brick, Rubik's cube: obstacles, never targets. No potted meat can anywhere: YOLOE mistakes it for the tomato can ([I-025](DECISIONS.md#i-025)) |
-| Shelf | 0.80 m wide, 0.35 m deep, on the robot's right, opening towards it: front 0.47 m from the base, 0.17 m clear of the table. Boards at z = 0.05 and 0.45 m (0.38 m between them; the top one is open) |
-| Shelf items | Sugar box + Rubik's cube on the bottom board, foam brick on the top one: stage 5 must find the space around them |
-| Fixed camera | RealSense D455 (NVIDIA model) on a floor tripod, front-left of the table, ~0.75 m from the targets, looking 35° down. Pinhole 640×480, fx = fy = 615 ([D-007](DECISIONS.md#d-007)) |
+| Shelf | Metal pantry, 2.05 m tall: four corner posts and five boards, open at the back and sides ([D-041](DECISIONS.md#d-041)). 0.80 m wide, 0.35 m deep, on the robot's right: front 0.47 m from the base, 0.17 m clear of the table. Board tops at z = −0.35, 0.05, 0.45, 0.95 and 1.30 m; the arm works on 0.05 (0.38 m clear above) and 0.45 (0.48 m) |
+| Shelf items | Sugar box on the 0.05 m board, Rubik's cube + foam brick on the 0.45 m board: stage 5 must find the space around them |
+| Fixed camera | RealSense D455 (NVIDIA model) on a floor tripod beyond the table's far side, 0.85–0.95 m from the targets, all five items in view. Pinhole 640×480, fx = fy = 615 ([D-007](DECISIONS.md#d-007)) |
 | Wrist camera | D455 flat on the side of the hand, looking along the fingers. `robot.look_joints` puts it at (0.12, −0.12, 0.90) looking into the shelf |
 
 Both camera bodies and the tripod are visual only (no colliders), and never appear in their own images.
@@ -104,7 +104,7 @@ The workstation renders; the laptop only shows a WebRTC stream.
 | Knob | What |
 |---|---|
 | `sim.objects` | `{name, xy, yaw_deg, tilt_deg, target}` per table item. `yaw_deg` fixed or `[lo, hi]` (random per frame); `tilt_deg: 90` = on its side; `target: true` = save mask + ground truth |
-| `sim.shelf`, `sim.shelf_objects` | Footprint, board heights, thickness; items on the boards `{name, level, x, yaw_deg}` |
+| `sim.shelf`, `sim.shelf_objects` | Footprint, board heights, board and post thickness; items on the boards `{name, level, x, yaw_deg}` (level = index into `levels_z`) |
 | `robot.home_joints`, `robot.look_joints` | Home pose; the pose for the shelf shot |
 | `gripper.finger_extension` | Extra finger length (sim, MoveIt model, grasp model, TCP) |
 | `sim.gripper` | Finger drive: stiffness, max force (N), pad friction |

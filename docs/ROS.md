@@ -88,8 +88,8 @@ MoveIt 2 (move_group, pick_ik) ◄── task_manager (BehaviorTree.CPP) ──�
 | Place | preplace → straight in → still holding it? → open → back out along the gripper axis |
 | Recover | still holding it → put it back where it was picked; then home |
 
-**Look before you pick** ([D-023](DECISIONS.md#d-023)). The grasp has to suit the place: a side grasp can go into the
-lower shelf gap, a top-down one only onto the open top board. So the shelf is seen first, and `SelectPlans` pairs
+**Look before you pick** ([D-023](DECISIONS.md#d-023)). The grasp has to suit the place: a side grasp can go into a
+shelf gap, a top-down one only where there is room above for the hand. So the shelf is seen first, and `SelectPlans` pairs
 placements (upright first, [D-031](DECISIONS.md#d-031)) with grasps (least tilted first). The object is set down in
 the placement's rest pose, turned so that a side grasp points into the shelf.
 

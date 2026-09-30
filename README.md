@@ -6,7 +6,7 @@ put it — with no object-specific training and no prior model of the shelf.
 
 ![Isaac Sim cell: Franka Panda, table with YCB objects, shelf, fixed RealSense D455 on a tripod and a wrist-mounted D455](docs/sim/overview.png)
 
-*Simulated cell (Isaac Sim 6.1): Franka Panda with lengthened fingers, a table of YCB objects, a two-level shelf as the
+*Simulated cell (Isaac Sim 6.1): Franka Panda with lengthened fingers, a table of YCB objects, a metal pantry as the
 place target, a fixed RealSense D455 over the table, and a wrist-mounted D455 that looks into the shelf.*
 
 ## Pipeline
@@ -43,8 +43,8 @@ checking. Guide: [docs/ROS.md](docs/ROS.md).
 | 2 Pose | Sim, vs. ground truth: **0.5–1.5°, < 1 mm** (upright bottle and a can lying on its side) · ~0.9 s / registration |
 | 3 Table | Table plane from 52 % of the points; recovered bottle height 92 mm vs. 96 mm true (pose and plane agree) |
 | 4 Grasp | 2 of 8 candidates feasible; best approaches 2° from vertical |
-| 5 Place | Both shelf boards found at their true heights (0.05 / 0.45 m) · 6 placements ranked by clearance · 0.2 s |
-| Whole task | 10 randomised episodes, perception to placement: **mustard 10/10, tomato can 8/10** (stood upright) · 77 % of moves a single straight joint-space line |
+| 5 Place | The three visible pantry boards found at their true heights (−0.35 / 0.05 / 0.45 m) · 6 placements ranked by clearance · 0.2 s |
+| Whole task | Randomised episodes, perception to placement: **mustard 10/10, tomato can 8/10** (stood upright, 10 episodes, two-board shelf) · 3/3 each in the pantry cell ([D-041](docs/DECISIONS.md#d-041)) · 77 % of moves a single straight joint-space line |
 
 Stage-by-stage details, numbers and failure cases are in each guide below.
 
