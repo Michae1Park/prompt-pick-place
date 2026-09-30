@@ -496,7 +496,7 @@ stalls Replicator annotators ([D-032](#d-032)), and a screen recording of the We
 | [I-038](#i-038) | 2026-09-30 | The pose overlay is drawn in the scene, so the cameras see it too | Workaround |
 | [I-039](#i-039) | 2026-09-30 | With five targets the pantry fills: late carries collide with objects already placed | Open |
 | [I-040](#i-040) | 2026-09-30 | A text prompt's best detection is taken at any score: "the rubik's cube" picked the foam brick at 0.06 | Open |
-| [I-041](#i-041) | 2026-09-30 | Compose: robot's controller spawner timed out before the sim was up, so the arm had no controllers | Fix pending test |
+| [I-041](#i-041) | 2026-09-30 | Compose: robot's controllers never loaded (spawner timed out; then its params file was in another container's `/tmp`) | Resolved |
 
 ### I-001
 Python fails with errors ordinary code can't produce: `unknown opcode`, `invalid SRE code`, a bogus
@@ -719,7 +719,9 @@ In `docker compose up`, `depends_on` only orders container starts. The sim took 
 controller_manager, and robot's spawner gives up after 120 s, so the arm and hand controllers never loaded: the first
 prompt's grasp closed on nothing and the arm ended in self-collision. Development never hits it because the sim is
 started first. Fix: the `sim` service has a healthcheck (`/controller_manager/list_controllers` is served) and `robot`
-waits for `service_healthy`.
+waits for `service_healthy`. Then loading still failed: `parameters=` on the spawner makes launch write a params file to
+robot's `/tmp`, and the spawner hands its path to the controller_manager, which runs in the sim container. The spawner now
+takes `use_sim_time` as a ROS argument. With both fixes a text-prompted mustard pick placed 1/1 through compose.
 
 | ID | Question | Notes |
 |---|---|---|
