@@ -51,12 +51,6 @@ from isaacsim import SimulationApp  # noqa: E402
 app = SimulationApp({'headless': True, 'hide_ui': not args.livestream, 'width': 1280, 'height': 720})
 from isaacsim.core.utils.extensions import enable_extension  # noqa: E402
 
-if args.livestream:
-    # WebRTC stream of the viewport (signal TCP 49100, media UDP 47998), set up as in scene.py
-    import carb  # noqa: E402
-    carb.settings.get_settings().set('/exts/omni.kit.livestream.app/primaryStream/enableEventTracing', False)
-    enable_extension('omni.kit.livestream.app')
-
 for ext in ('isaacsim.ros2.bridge', 'isaacsim.ros2.control', 'isaacsim.util.debug_draw'):
     enable_extension(ext)
 app.update()
@@ -76,8 +70,8 @@ from std_srvs.srv import Trigger  # noqa: E402
 
 sys.path.insert(0, REPO)
 sys.path.insert(0, os.path.join(REPO, 'sim'))
-from cell import (FRANKA_READY, ArticulationAction, add_camera, add_camera_rig, add_wrist_camera,  # noqa: E402
-                  build_scene, drop_all, place_on_shelf, quat_wxyz, world_pose_cv)
+from cell import (add_camera, add_camera_rig, add_wrist_camera, build_scene, drop_all, place_on_shelf,  # noqa: E402
+                  quat_wxyz, reset_robot, set_viewport, start_livestream, world_pose_cv)
 from vision import load_config  # noqa: E402
 from vision import transforms as tf  # noqa: E402
 
@@ -321,8 +315,11 @@ def main():
     rclpy.init()
     node = rclpy.create_node('isaac_sim_cell')
     refuse_second_clock(node)
-    cfg = load_config()['sim']
-    world, franka, objects, shelf_objects = build_scene(cfg)
+    if args.livestream:
+        start_livestream()
+    full = load_config()
+    cfg = full['sim']
+    world, franka, objects, shelf_objects = build_scene(cfg, full['gripper'])
     cam_cfg = cfg['camera']
     cam_path, K, T_world_cam = add_camera(cam_cfg)
     add_camera_rig(T_world_cam, -cfg['table_size'][2], cam_cfg['rig'])
@@ -339,10 +336,7 @@ def main():
 
     overlay = PoseOverlay(node, targets)
     rng = np.random.default_rng(args.seed)
-    world.reset()
-    franka.set_joints_default_state(positions=FRANKA_READY)
-    franka.set_joint_positions(FRANKA_READY)
-    franka.apply_action(ArticulationAction(joint_positions=FRANKA_READY))
+    reset_robot(world, franka, full['robot']['home_joints'])
     drop_all(objects, rng)
     place_on_shelf(shelf_objects, cfg['shelf'])
 
@@ -358,8 +352,7 @@ def main():
     dt = cfg['physics_dt']
     every = max(1, int(round(1.0 / (args.camera_hz * dt))))
     if args.livestream:
-        from isaacsim.core.utils.viewports import set_camera_view
-        set_camera_view(eye=np.array([1.95, -0.25, 1.30]), target=np.array([0.30, -0.08, 0.10]))  # as scene.py
+        set_viewport(cfg)
         print('[ros_cell] streaming on TCP 49100 / UDP 47998 - connect the Isaac Sim WebRTC Streaming Client '
               'to this machine\'s IP', flush=True)
     print('[ros_cell] running: cameras at %.1f Hz sim time, rtf cap %s. Ctrl+C to quit.'
