@@ -6,14 +6,14 @@ fixed_camera:
   parent: panda_link0
   child: camera_color_optical_frame
   xyz:
-  - 1.07
-  - 0.42
-  - 0.5
+  - 1.15
+  - 0.32
+  - 0.64
   quat_xyzw:
-  - -0.36309535
-  - -0.81404423
-  - 0.4139984
-  - 0.18465937
+  - -0.54603428
+  - -0.75323488
+  - 0.29691201
+  - 0.21523715
 wrist_camera:
   parent: panda_hand
   child: wrist_camera_color_optical_frame

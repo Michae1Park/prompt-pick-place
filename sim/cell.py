@@ -10,6 +10,7 @@ REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 import numpy as np
 from isaacsim.core.api import World
+from isaacsim.core.api.materials import PreviewSurface
 from isaacsim.core.api.objects import FixedCuboid, GroundPlane, VisualCylinder, VisualSphere
 from isaacsim.core.prims import SingleArticulation, SingleRigidPrim
 from isaacsim.core.utils.stage import add_reference_to_stage, get_current_stage
@@ -19,7 +20,7 @@ from pxr import Gf, PhysxSchema, Semantics, Usd, UsdGeom, UsdLux, UsdPhysics, Us
 
 sys.path.insert(0, REPO)
 sys.path.insert(0, os.path.join(REPO, 'sim'))
-from vision import read_obj_vertices
+from vision import read_obj_vertices, shelf_boxes
 from vision import transforms as tf
 from ycb_usd import YCB, ensure_object_usd, prim_name
 
@@ -50,20 +51,16 @@ def set_pose(prim, T):
     xf.AddTransformOp().Set(Gf.Matrix4d(*T.T.flatten()))
 
 
-def box(path, center, size, color):
+def box(path, center, size, color, material=None):
     return FixedCuboid(path, position=np.array(center, float), scale=np.array(size, float), size=1.0,
-                       color=linear(color))
+                       color=None if material else linear(color), visual_material=material)
 
 
 def add_shelf(cfg, floor_z, color):
-    """Open shelf: side panels + back panel + one board per level, opening facing the robot (+y)."""
-    (cx, cy), (w, d), t = cfg['center_xy'], cfg['size'], cfg['board']
-    h = max(cfg['levels_z']) - floor_z
-    for side, x in (('left', cx - w / 2 + t / 2), ('right', cx + w / 2 - t / 2)):
-        box('/World/Shelf/' + side, [x, cy, floor_z + h / 2], [t, d, h], color)
-    box('/World/Shelf/back', [cx, cy - d / 2 + t / 2, floor_z + h / 2], [w, t, h], color)
-    for k, z in enumerate(cfg['levels_z']):
-        box('/World/Shelf/board_%d' % k, [cx, cy, z - t / 2], [w, d, t], color)
+    """Metal pantry: corner posts + one board per level, open on every side (vision.shelf_boxes)."""
+    steel = PreviewSurface('/World/Looks/steel', color=linear(color), roughness=0.4, metallic=0.7)
+    for name, center, size in shelf_boxes(cfg, floor_z):
+        box('/World/Shelf/' + name, center, size, color, steel)
 
 
 def add_ycb(world, name, label, path=None):

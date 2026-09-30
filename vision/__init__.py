@@ -13,6 +13,16 @@ def load_config():
         return yaml.safe_load(f)
 
 
+def shelf_boxes(shelf, floor_z):
+    """The pantry (config.yaml sim.shelf) as boxes: four corner posts from the floor to the top board, one board
+    per level; open back and sides. -> [(name, centre xyz, size xyz)] in the base frame (sim/cell.py, MoveIt)."""
+    (cx, cy), (w, d), t, p = shelf['center_xy'], shelf['size'], shelf['board'], shelf['post']
+    top = max(shelf['levels_z'])
+    boxes = [('post_%d' % k, [cx + sx * (w - p) / 2, cy + sy * (d - p) / 2, (floor_z + top) / 2], [p, p, top - floor_z])
+             for k, (sx, sy) in enumerate(((-1, -1), (-1, 1), (1, -1), (1, 1)))]
+    return boxes + [('board_%d' % k, [cx, cy, z - t / 2], [w, d, t]) for k, z in enumerate(shelf['levels_z'])]
+
+
 def read_obj_vertices(path):
     """Vertices (N, 3) of a Wavefront OBJ (no mesh library needed)."""
     with open(path) as f:
