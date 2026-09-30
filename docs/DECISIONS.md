@@ -496,6 +496,7 @@ stalls Replicator annotators ([D-032](#d-032)), and a screen recording of the We
 | [I-038](#i-038) | 2026-09-30 | The pose overlay is drawn in the scene, so the cameras see it too | Workaround |
 | [I-039](#i-039) | 2026-09-30 | With five targets the pantry fills: late carries collide with objects already placed | Open |
 | [I-040](#i-040) | 2026-09-30 | A text prompt's best detection is taken at any score: "the rubik's cube" picked the foam brick at 0.06 | Open |
+| [I-041](#i-041) | 2026-09-30 | Compose: robot's controller spawner timed out before the sim was up, so the arm had no controllers | Fix pending test |
 
 ### I-001
 Python fails with errors ordinary code can't produce: `unknown opcode`, `invalid SRE code`, a bogus
@@ -712,6 +713,13 @@ execution. Every object was detected and posed in every episode.
 "the rubik's cube" found the foam brick at 0.06, and the library confirmed it (the brick is a target), so the robot
 would have picked the wrong object. "The colorful cube" (0.48) and "the red block" (0.69) found the cube. A score floor
 would stop this, but "the mustard" was right at 0.05; needs a decision (floor, or ask the user to confirm low scores).
+
+### I-041
+In `docker compose up`, `depends_on` only orders container starts. The sim took ~160 s after a reboot to bring up its
+controller_manager, and robot's spawner gives up after 120 s, so the arm and hand controllers never loaded: the first
+prompt's grasp closed on nothing and the arm ended in self-collision. Development never hits it because the sim is
+started first. Fix: the `sim` service has a healthcheck (`/controller_manager/list_controllers` is served) and `robot`
+waits for `service_healthy`.
 
 | ID | Question | Notes |
 |---|---|---|

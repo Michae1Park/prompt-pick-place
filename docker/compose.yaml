@@ -29,6 +29,12 @@ services:
   foundationpose:
     <<: *gpu
     image: ppp-foundationpose:latest
+    healthcheck:                             # healthy once its controller_manager serves: robot's spawner needs it
+      test: [CMD, bash, -c, "source /opt/ppp/ros2/install/setup.bash && ros2 service list --no-daemon | grep -qx /controller_manager/list_controllers"]
+      interval: 10s
+      timeout: 20s
+      start_period: 15m
+      start_interval: 5s
     build: {context: .., dockerfile: docker/Dockerfile, target: foundationpose}
     command: /opt/ppp/docker/fp_run.sh
     volumes: [fp-engines:/opt/ppp/models/isaac_ros/foundationpose]   # TensorRT engines, built for this GPU on first start
@@ -36,7 +42,9 @@ services:
   robot:
     <<: *gpu
     image: ppp:latest
-    depends_on: [sim, foundationpose]
+    depends_on:                              # start waits for the sim: its first start can outlast the spawner's timeout
+      sim: {condition: service_healthy}
+      foundationpose: {condition: service_started}
     command: ros2 launch ppp_bringup all.launch.py eval:=true foundationpose:=false
 
   ui:
