@@ -45,6 +45,8 @@ along the way. Newest entries go at the bottom of each list.
 | [D-030](#d-030) | 2026-09-30 | Recovery never drops an object somewhere random | Accepted |
 | [D-031](#d-031) | 2026-09-30 | Place in the most natural stable rest pose that fits: upright first (supersedes the orientation rule of D-024) | Accepted |
 | [D-032](#d-032) | 2026-09-30 | `ros_cell.py --livestream`: watch the live ROS cell in the WebRTC client | Accepted |
+| [D-033](#d-033) | 2026-09-30 | Re-lay out the cell so the arm has clearance for clean paths | Proposed |
+| [D-034](#d-034) | 2026-09-30 | Draw pose estimates and placements in the sim viewport | Accepted |
 
 ### D-001
 **Keep YOLOE-seg (not OWLv2 + SAM2).** One `ultralytics` model gives box + mask in a single pass and was
@@ -264,6 +266,27 @@ for unfamiliar objects (e.g. keep containers of liquid upright).
 **`ros_cell.py --livestream`** enables `omni.kit.livestream.app` as in `scene.py`, so the live cell can be
 watched in the Isaac Sim WebRTC Streaming Client while the whole ROS pipeline runs (I-013 turned out not to
 apply). Foxglove (D-017) stays the way to see ROS data: detections, planned paths, TF.
+
+### D-033
+**Re-lay out the cell for clearance.** Motions in the live run look contorted, and the 8-episode baseline is can
+6/8, mustard 3/8. Suspected causes in the current layout (`config.yaml` `sim:`):
+- The table's near edge is 0.20 m from the base, and objects sit 0.33–0.72 m out. Top-down grasps close to the base
+  fold joint 4 hard.
+- The shelf is 0.43 m to the side (near edge) at board heights 0 / 0.32 / 0.64 m. The low board is cramped under
+  the arm, and the top one is near the reach limit once the hand is inside the shelf.
+- Table → shelf is a 90° swing of joint 1 with the object held low, next to the table.
+
+Plan: (1) log which motions fail or wind up in the baseline (`sim/episodes.py -n 10`); (2) move the table and
+objects about 0.10 m further out, and the shelf to about 0.5–0.6 m from the base, possibly angled towards the
+table; (3) regenerate what depends on the layout: `config/calibration.yaml` (`sim/write_calibration.py`),
+`look_joints` (IK), the overview camera and figures; (4) re-run 10 episodes and compare.
+
+### D-034
+**Overlay of the current target in the sim viewport** (`ros_cell.py`, `isaacsim.util.debug_draw`, so it shows in the
+WebRTC stream too). Magenta: the object's box and axes at `/pose_node/pose`. Dim green: `/place_node/placements`
+candidates. Green: the object's box where the task will set it down (`/task_manager/place_goal`, published when a
+plan is taken). `/task_manager/target` (latched) announces each target and is set to "" when done, which clears the
+overlay. With no target announced, a pose is matched to the nearest sim object. Viewer only.
 
 ## Issues
 
