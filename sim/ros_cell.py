@@ -4,6 +4,7 @@ evaluation only (D-010). Same scene as scene.py (sim/cell.py), but it keeps runn
 
   .venv-sim/bin/python sim/ros_cell.py                 # re-runs itself with /opt/ros/jazzy sourced
   .venv-sim/bin/python sim/ros_cell.py --seed 3 --rtf 0   # other object yaws; as fast as possible
+  .venv-sim/bin/python sim/ros_cell.py --livestream    # also stream the viewport to the WebRTC client (D-032)
 
 Published (pipeline-facing, RealSense-style names; depth 16UC1 mm, aligned to colour):
   /camera/camera/color/image_raw, .../color/camera_info,
@@ -40,13 +41,21 @@ ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDe
 ap.add_argument('--seed', type=int, default=0, help='object yaws (each /sim/reset draws new ones)')
 ap.add_argument('--rtf', type=float, default=1.0, help='real-time factor cap (0 = as fast as possible)')
 ap.add_argument('--camera-hz', type=float, default=10.0, help='camera publish rate (sim time)')
+ap.add_argument('--livestream', action='store_true',
+                help='also stream the viewport to the Isaac Sim WebRTC Streaming Client (D-032)')
 args = ap.parse_args()
 
 os.environ.setdefault('OMNI_KIT_ACCEPT_EULA', 'YES')
 from isaacsim import SimulationApp  # noqa: E402
 
-app = SimulationApp({'headless': True, 'hide_ui': True})
+app = SimulationApp({'headless': True, 'hide_ui': not args.livestream, 'width': 1280, 'height': 720})
 from isaacsim.core.utils.extensions import enable_extension  # noqa: E402
+
+if args.livestream:
+    # WebRTC stream of the viewport (signal TCP 49100, media UDP 47998), set up as in scene.py
+    import carb  # noqa: E402
+    carb.settings.get_settings().set('/exts/omni.kit.livestream.app/primaryStream/enableEventTracing', False)
+    enable_extension('omni.kit.livestream.app')
 
 for ext in ('isaacsim.ros2.bridge', 'isaacsim.ros2.control'):
     enable_extension(ext)
@@ -246,6 +255,11 @@ def main():
     start_ros2_control(world)
     dt = cfg['physics_dt']
     every = max(1, int(round(1.0 / (args.camera_hz * dt))))
+    if args.livestream:
+        from isaacsim.core.utils.viewports import set_camera_view
+        set_camera_view(eye=np.array([1.95, -0.25, 1.30]), target=np.array([0.30, -0.08, 0.10]))  # as scene.py
+        print('[ros_cell] streaming on TCP 49100 / UDP 47998 - connect the Isaac Sim WebRTC Streaming Client '
+              'to this machine\'s IP', flush=True)
     print('[ros_cell] running: cameras at %.1f Hz sim time, rtf cap %s. Ctrl+C to quit.'
           % (1.0 / (every * dt), args.rtf or 'none'), flush=True)
     step, wall0, sim0 = 0, time.monotonic(), world.current_time
