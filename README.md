@@ -145,12 +145,12 @@ report and writes an annotated image to `output/`.
 
 ```bash
 source .venv/bin/activate
-python pipeline/01_detect.py --ref 006_mustard_bottle     # 1 detect
-python pipeline/02_pose.py                                 # 2 pose (needs the NVlabs container, below)
-python pipeline/03_spatial.py                              # 3 table + free space
-python pipeline/04_grasp.py                                # 4 grasp
-python pipeline/05_place.py                                # 5 place (needs the sim capture below)
-.venv-sim/bin/python sim/scene.py                                   # Isaac Sim: RGB-D + ground truth -> data/sim/
+python pipeline/01_detect.py --ref 006_mustard_bottle # 1 detect
+python pipeline/02_pose.py                            # 2 pose (needs the NVlabs container, below)
+python pipeline/03_spatial.py                         # 3 table + free space
+python pipeline/04_grasp.py                           # 4 grasp
+python pipeline/05_place.py                           # 5 place (needs the sim capture below)
+.venv-sim/bin/python sim/scene.py                     # Isaac Sim: RGB-D + ground truth -> data/sim/
 ```
 
 Stage 2's playground runs NVlabs' research FoundationPose in a container named `foundationpose` that

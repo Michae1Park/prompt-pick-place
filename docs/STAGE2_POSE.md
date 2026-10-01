@@ -5,7 +5,7 @@
 Cursor terminal on the workstation. The script re-runs itself inside the `foundationpose` container — no `docker exec` needed.
 
 ```bash
-source .venv/bin/activate                                                        # once per terminal
+source .venv/bin/activate                                               # once per terminal
 python pipeline/02_pose.py                                              # defaults
 python pipeline/02_pose.py --iterations 1 --tag it1                     # fewer refinement steps
 python pipeline/02_pose.py --iterations 10 --tag it10                   # more refinement steps
