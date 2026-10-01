@@ -63,6 +63,7 @@ along the way. Newest entries go at the bottom of each list.
 | [D-048](#d-048) | 2026-10-01 | Demo re-recorded sharp: UI screencast frames at a 1280 px layout, sim at 1080p; prompt UI as SVG | Accepted |
 | [D-049](#d-049) | 2026-10-01 | README documents where meshes and weights come from; mustard0 demo data stays a manual download | Superseded by D-050 (mustard0); data and weights docs still Accepted |
 | [D-050](#d-050) | 2026-10-01 | Scripted mustard0 run removed; the playgrounds take its numbered names (`01_detect.py` … `05_place.py`) | Accepted |
+| [D-051](#d-051) | 2026-10-01 | Stage 2's NVlabs FoundationPose container: setup commands in the README, outside `install.sh` | Accepted |
 
 ### D-001
 **Keep YOLOE-seg (not OWLv2 + SAM2).** One `ultralytics` model gives box + mask in a single pass and was
@@ -507,6 +508,17 @@ README's download steps. The stage number in the name reads better, so the playg
 `interactive_{detect,pose,spatial,grasp,place}.py` → `01_detect.py` … `05_place.py` (older entries keep the old
 names). `02_pose.py` now re-runs itself in the container by absolute path, so it works from any directory. With this, a
 fresh clone needs no manual downloads for the robot or the playgrounds except stage 2's NVlabs container.
+
+### D-051
+**Stage 2 container setup documented, not installed.** `02_pose.py` and `render_mesh.py` need NVlabs' research
+FoundationPose in a container named `foundationpose`; the README only said `install.sh` doesn't set it up, so a fresh
+clone couldn't run stage 2's playground. Its setup was written down once and dropped in the README rewrite. Now a README
+section, *Stage 2 setup*, gives the commands: clone NVlabs at the pinned `a1b694b`, weights with `gdown --folder` from
+their Drive (checksums match the working copy), `docker run` of `shingarey/foundationpose_custom_cuda121` (NVlabs' image
+targets older GPUs; this is what runs on the L40S) with the repo mounted at its own path, then `build_all.sh` inside.
+Verified from scratch in a throwaway container: extensions build and both networks load. Kept out of `install.sh` because
+only one playground needs it, and it adds a 36 GB image plus a Drive download to an install the robot doesn't need. Both
+scripts now re-run themselves in the container by absolute path, so they work from any directory.
 
 ## Issues
 

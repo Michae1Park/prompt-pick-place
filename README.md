@@ -128,7 +128,8 @@ docker compose -f docker/compose.yaml run --rm task  # terminal 2, once terminal
 | **Changing code** | Every change needs an image rebuild (step 2), which is slow. Develop natively; use Docker to deploy |
 
 **Data and model weights.** Meshes and weights are not in git; both install paths download them, so nothing is
-fetched by hand. Docker needs network access during `build`.
+fetched by hand (except for stage 2's playground: [its own setup](#stage-2-setup-nvlabs-foundationpose-container)).
+Docker needs network access during `build`.
 
 | What | Where | Source | Native | Docker |
 |---|---|---|---|---|
@@ -146,15 +147,36 @@ report and writes an annotated image to `output/`.
 ```bash
 source .venv/bin/activate
 python pipeline/01_detect.py --ref 006_mustard_bottle # 1 detect
-python pipeline/02_pose.py                            # 2 pose (needs the NVlabs container, below)
+python pipeline/02_pose.py                            # 2 pose (needs the stage 2 setup below)
 python pipeline/03_spatial.py                         # 3 table + free space
 python pipeline/04_grasp.py                           # 4 grasp
 python pipeline/05_place.py                           # 5 place (needs the sim capture below)
 .venv-sim/bin/python sim/scene.py                     # Isaac Sim: RGB-D + ground truth -> data/sim/
 ```
 
-Stage 2's playground runs NVlabs' research FoundationPose in a container named `foundationpose` that
-`scripts/install.sh` does not set up yet; the robot uses Isaac ROS FoundationPose instead and doesn't need it.
+### Stage 2 setup (NVlabs FoundationPose container)
+
+**Only for `02_pose.py`.** Stage 2's playground runs NVlabs' research FoundationPose in a container named
+`foundationpose`. `scripts/install.sh` does not set it up: the robot uses Isaac ROS FoundationPose instead, and the
+other playgrounds don't need it. Once, on the workstation, from the repo root (~36 GB image):
+
+```bash
+# 1 · NVlabs' code (pinned commit) and its network weights (Google Drive, 250 MB)
+git clone https://github.com/NVlabs/FoundationPose third_party/FoundationPose
+git -C third_party/FoundationPose checkout a1b694b
+.venv/bin/pip install gdown
+.venv/bin/gdown --folder https://drive.google.com/drive/folders/1DFezOAD0oD1BblsXVxqDsl8fj0qzB82i \
+  -O third_party/FoundationPose/weights
+
+# 2 · The container: a community build of NVlabs' image for CUDA 12.1 GPUs, the repo mounted at the same path
+docker run -d --name foundationpose --gpus all --network host -v "$PWD:$PWD" \
+  shingarey/foundationpose_custom_cuda121:latest sleep infinity
+
+# 3 · Build FoundationPose's CUDA extensions inside it
+docker exec foundationpose bash -lc "cd $PWD/third_party/FoundationPose && bash build_all.sh"
+```
+
+`02_pose.py` (and `render_mesh.py`) then start the container themselves and run inside it, also after a reboot.
 
 ## Run the robot
 

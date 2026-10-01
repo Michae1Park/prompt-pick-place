@@ -3,6 +3,7 @@
 ## Commands
 
 Cursor terminal on the workstation. The script re-runs itself inside the `foundationpose` container — no `docker exec` needed.
+Set that container up once first: [Stage 2 setup](../README.md#stage-2-setup-nvlabs-foundationpose-container).
 
 ```bash
 source .venv/bin/activate                                               # once per terminal
@@ -49,7 +50,7 @@ Same scene as stage 1: `data/multi_object_scene/`. Mustard bottle only.
 
 ## Model weights
 
-In `third_party/FoundationPose/weights/` (downloaded during FoundationPose setup). Loading both: ~5.5 s per run.
+In `third_party/FoundationPose/weights/` (downloaded by [Stage 2 setup](../README.md#stage-2-setup-nvlabs-foundationpose-container)). Loading both: ~5.5 s per run.
 
 | Folder | Size | Network | Job |
 |---|---|---|---|
