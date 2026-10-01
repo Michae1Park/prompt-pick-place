@@ -5,7 +5,7 @@ timing, overlay image. Guide: docs/STAGE2_POSE.md.
   (no flags)                     the stage 1 playground's image (data/multi_object_scene): YOLOE finds the
                                  mustard bottle (visual prompt) -> mask; mesh assets/ycb/006_mustard_bottle
   --data DIR                     instead: a dataset in FoundationPose demo_data layout (e.g. data/sim/<object>
-                                 from sim/scene.py, or FoundationPose's mustard0 robot-arm sequence)
+                                 from sim/scene.py)
   --frame N / --mask gt|PATH     frame + mask for --data
   --iterations 5                 refinement iterations per hypothesis
   --n-views 40 --inplane-step 60 rotation hypothesis grid
@@ -28,7 +28,6 @@ sys.path.insert(0, REPO)
 from vision import load_config  # noqa: E402
 
 CONTAINER, CONTAINER_PY = 'foundationpose', '/opt/conda/envs/my/bin/python3'
-DATA = os.path.join(REPO, 'third_party', 'FoundationPose', 'demo_data', 'mustard0')
 OUT = os.path.join(REPO, 'output', 'pose')
 SCENE = os.path.join(REPO, 'data', 'multi_object_scene')
 OBJECT = '006_mustard_bottle'  # has a visual prompt in SCENE/refs/ and a mesh in assets/ycb/
@@ -38,8 +37,8 @@ def parse_args():
     cfg = load_config()['pose']
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument('--data', default=None, help='dataset dir: rgb/ depth/ masks/ mesh/ cam_K.txt [ob_in_cam/]')
-    p.add_argument('--frame', type=int, default=None, help='frame index (default: stage 1 frame for mustard0)')
-    p.add_argument('--mask', default=None, help='stage1 | gt | path to a mask png (nonzero = object)')
+    p.add_argument('--frame', type=int, default=None, help='frame index (default: 0)')
+    p.add_argument('--mask', default=None, help='gt | path to a mask png (nonzero = object)')
     p.add_argument('--mesh', default=None, help='default: <data>/mesh/textured_simple.obj or textured.obj')
     p.add_argument('--iterations', type=int, default=cfg['iterations'])
     p.add_argument('--n-views', type=int, default=40, help='min icosphere viewpoints (rounded up to 12/42/162/...)')
@@ -54,10 +53,9 @@ def parse_args():
         a.mesh = a.mesh or os.path.join(REPO, 'assets', 'ycb', OBJECT, 'textured.obj')
         return a
     a.data = os.path.abspath(a.data)
-    is_mustard0 = a.data == DATA
     if a.mask is None:
-        a.mask = 'stage1' if is_mustard0 else 'gt'
-    if a.frame is None and not is_mustard0:
+        a.mask = 'gt'
+    if a.frame is None:
         a.frame = 0
     if a.mesh is None:
         a.mesh = os.path.join(a.data, 'mesh', 'textured_simple.obj')
@@ -69,7 +67,7 @@ def parse_args():
 def run_in_container():
     """Host side: re-run this script in the container, then fix ownership and open the image."""
     subprocess.run(['docker', 'start', CONTAINER], check=True, stdout=subprocess.DEVNULL)
-    cmd = 'cd %s && %s %s' % (REPO, CONTAINER_PY, shlex.join(sys.argv))
+    cmd = 'cd %s && %s %s' % (REPO, CONTAINER_PY, shlex.join([os.path.abspath(sys.argv[0])] + sys.argv[1:]))   # absolute: the container cds to REPO
     rc = subprocess.run(['docker', 'exec', CONTAINER, 'bash', '-lc', cmd]).returncode
     subprocess.run(['docker', 'exec', CONTAINER, 'chown', '-R', '%d:%d' % (os.getuid(), os.getgid()),
                     os.path.join(REPO, 'output')], stderr=subprocess.DEVNULL)
@@ -109,10 +107,7 @@ def load_inputs(a):
     import numpy as np
     if a.mask == 'yoloe':
         return load_scene_inputs(a)
-    stage1 = os.path.join(REPO, 'output', '01_result.json')
-    s1 = json.load(open(stage1)) if os.path.exists(stage1) else None
-    frame = a.frame if a.frame is not None else (s1['frame_index'] if s1 else 736)
-    rgb_path = sorted(glob.glob(os.path.join(a.data, 'rgb', '*.png')))[frame]
+    rgb_path = sorted(glob.glob(os.path.join(a.data, 'rgb', '*.png')))[a.frame]
     frame_id = os.path.splitext(os.path.basename(rgb_path))[0]
 
     rgb = cv2.imread(rgb_path)[..., ::-1].copy()
@@ -120,22 +115,17 @@ def load_inputs(a):
     depth[depth < 0.001] = 0
     K = np.loadtxt(os.path.join(a.data, 'cam_K.txt')).reshape(3, 3)
 
-    if a.mask == 'stage1':
-        if not s1 or s1['frame_index'] != frame:
-            raise SystemExit('--mask stage1 needs output/01_mask.png for frame %d (stage 1 ran on %s); '
-                             'use --mask gt or re-run stage 1' % (frame, s1 and s1['frame_index']))
-        mask_path = os.path.join(REPO, 'output', '01_mask.png')
-    elif a.mask == 'gt':
+    if a.mask == 'gt':
         mask_path = os.path.join(a.data, 'masks', frame_id + '.png')
         if not os.path.exists(mask_path):
-            raise SystemExit('no ground-truth mask %s (mustard0 has one only for frame 0)' % mask_path)
+            raise SystemExit('no ground-truth mask %s' % mask_path)
     else:
         mask_path = a.mask
     mask = cv2.imread(mask_path, cv2.IMREAD_UNCHANGED)
     mask = (mask if mask.ndim == 2 else mask[..., 0]) > 0
     if mask.shape != depth.shape:
         mask = cv2.resize(mask.astype(np.uint8), depth.shape[::-1], interpolation=cv2.INTER_NEAREST) > 0
-    return frame, frame_id, K, rgb, depth, mask, mask_path
+    return a.frame, frame_id, K, rgb, depth, mask, mask_path
 
 
 def rot_deg(R):
