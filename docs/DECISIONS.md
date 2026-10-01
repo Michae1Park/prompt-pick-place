@@ -59,6 +59,7 @@ along the way. Newest entries go at the bottom of each list.
 | [D-044](#d-044) | 2026-09-30 | One install script for development; Docker images for deployment only | Accepted |
 | [D-045](#d-045) | 2026-09-30 | Demo GIF: the prompt UI and the sim recorded separately, joined on wall time | Accepted |
 | [D-046](#d-046) | 2026-09-30 | Demo GIF at a variable speed: the prompting slow, the robot fast | Accepted |
+| [D-047](#d-047) | 2026-10-01 | README demo as two GIFs (text prompt, visual prompt) at 1280 px so the prompt UI is readable | Accepted |
 
 ### D-001
 **Keep YOLOE-seg (not OWLv2 + SAM2).** One `ultralytics` model gives box + mask in a single pass and was
@@ -461,6 +462,14 @@ image, and `--hold` s after Go for the detection) runs at `--prompt-speed` (1.5�
 the current speed. Plain `--speeds` still makes the uniform GIFs. The sim now goes on top and the UI below, and
 `--colors` / `--dither` shrink the file: a 26 s GIF is 30 MB at the defaults, 8.9 MB at `--width 640 --colors 64
 --dither none`.
+
+### D-047
+**Two README GIFs at 1280 px.** At 640 px the 1600×780 UI recording is scaled to 0.4×, so the prompt text, the Text /
+Image tabs and the "Found" line can't be read on GitHub, and the text vs. visual prompting isn't visible. One GIF at
+1280 px was 31–42 MB (the fast sim motion is most of the bytes); 960 px was 13.5 MB and only just readable.
+`demo_gif.py --split` cuts the same recording after the text prompt's task into `docs/demo_text.gif` and
+`docs/demo_image.gif`, each under its own heading in the README (visual prompt first); at `--width 1280 --colors 48 --fps 8 --dither none` (the sim at its
+native width, the UI at 0.8×) they are 10.3 and 11.1 MB. Supersedes the single GIF of [D-046](#d-046).
 
 ## Issues
 
