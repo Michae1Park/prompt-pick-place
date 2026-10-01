@@ -60,6 +60,7 @@ along the way. Newest entries go at the bottom of each list.
 | [D-045](#d-045) | 2026-09-30 | Demo GIF: the prompt UI and the sim recorded separately, joined on wall time | Accepted |
 | [D-046](#d-046) | 2026-09-30 | Demo GIF at a variable speed: the prompting slow, the robot fast | Accepted |
 | [D-047](#d-047) | 2026-10-01 | README demo as two GIFs (text prompt, visual prompt) at 1280 px so the prompt UI is readable | Accepted |
+| [D-048](#d-048) | 2026-10-01 | Demo re-recorded sharp: UI screencast frames at a 1280 px layout, sim at 1080p; prompt UI as SVG | Accepted |
 
 ### D-001
 **Keep YOLOE-seg (not OWLv2 + SAM2).** One `ultralytics` model gives box + mask in a single pass and was
@@ -471,6 +472,17 @@ Image tabs and the "Found" line can't be read on GitHub, and the text vs. visual
 `docs/demo_image.gif`, each under its own heading in the README (visual prompt first); at `--width 1280 --colors 48 --fps 8 --dither none` (the sim at its
 native width, the UI at 0.8×) they are 10.3 and 11.1 MB. Supersedes the single GIF of [D-046](#d-046).
 Text prompt first again, in recording order: the visual-prompt clip opens on the end of the text pick.
+
+### D-048
+**Sharper demo recording.** The D-047 GIFs were still blurry: the page was laid out at 1600 CSS px (so scaled to 0.8× in
+a 1280 px GIF, and to ~0.55× in GitHub's column), and Playwright's video is a low-bitrate VP8. `record_demo.py` now
+lays the page out at 1280 px (`ui/index.html` keeps the three camera views in a row down to 1200 px) and saves Chrome's
+screencast frames as JPEGs named by wall time, like the sim's (`ros_cell.py --record-size 1920 1080`). The screencast
+comes at CSS px even with `--scale 2`, so the UI is 1:1 in a 1280 px GIF. `--order image,text` (the default) records
+the visual prompt first; `demo_gif.py` follows `events.json` `order`. GIFs at `--split --width 1280 --colors 48 --fps 8
+--dither none`: 9.3 MB (image) and 12.8 MB (text). The README's UI screenshot is now `docs/ui/prompt_ui.svg`
+(`scripts/ui_svg.py`, taken by `record_demo.py` after the first pick): boxes and text as vectors, with `textLength` so
+they keep their width in any font, and the images embedded as JPEGs from a 2× screenshot (134 KB).
 
 ## Issues
 
