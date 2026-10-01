@@ -5,12 +5,11 @@
 
 --motion-speed makes one GIF with a variable speed instead (D-046): the prompting (page load, typing / choosing the
 image, and --hold s after Go for the detection) at --prompt-speed, each task at --motion-speed. --split cuts it
-after the text prompt's task into two GIFs, *_text.gif and *_image.gif.
+after the first prompt's task into two GIFs, *_image.gif and *_text.gif.
 For the README GIFs (~10 MB each, UI text readable): --split --width 1280 --colors 48 --fps 8 --dither none.
 
-Inputs from scripts/record_demo.py and sim/ros_cell.py --record: output/rec/{ui/*.webm, sim/<wall ms>.jpg,
-events.json}. The sim frames are named by wall time, so they line up with the page's video (which starts at
-events.json "page"). Writes output/rec/demo_<speed>x.gif.
+Inputs from scripts/record_demo.py and sim/ros_cell.py --record: output/rec/{ui/<wall ms>.jpg, sim/<wall ms>.jpg,
+events.json} (ui/*.webm in older recordings). Both are named by wall time, so they line up. Writes output/rec/demo_<speed>x.gif.
 """
 import argparse
 import glob
@@ -22,13 +21,13 @@ REPO = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 FONT = '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf'
 
 
-def sim_concat(sim_dir, t0, t1, path):
-    """ffmpeg concat list of the sim frames from wall time t0 to t1, each shown until the next one."""
-    frames = sorted((int(os.path.basename(f)[:-4]) / 1000.0, f) for f in glob.glob(os.path.join(sim_dir, '*.jpg')))
+def frames_concat(frame_dir, t0, t1, path):
+    """ffmpeg concat list of the frames (<wall time ms>.jpg) from wall time t0 to t1, each shown until the next one."""
+    frames = sorted((int(os.path.basename(f)[:-4]) / 1000.0, f) for f in glob.glob(os.path.join(frame_dir, '*.jpg')))
     before = [x for x in frames if x[0] <= t0]
     frames = before[-1:] + [x for x in frames if t0 < x[0] <= t1]
     if len(frames) < 2:
-        raise SystemExit('no sim frames between the page start and the end: was ros_cell.py run with --record?')
+        raise SystemExit('no frames in %s between the page start and the end' % frame_dir)
     with open(path, 'w') as f:
         for i, (t, jpg) in enumerate(frames):
             start = max(t, t0)
@@ -47,8 +46,8 @@ def badge(speed):
 
 def segments(ev, t0, end, hold, prompt_speed, motion_speed):
     """[(start, end, speed)] in video time: the prompting at prompt_speed, the tasks at motion_speed."""
-    marks = [0.0, ev['text_go'] - t0 + hold, ev['text_done'] - t0, ev['image_go'] - t0 + hold,
-             ev['image_done'] - t0, end]
+    a, b = ev.get('order', ['text', 'image'])
+    marks = [0.0, ev[a + '_go'] - t0 + hold, ev[a + '_done'] - t0, ev[b + '_go'] - t0 + hold, ev[b + '_done'] - t0, end]
     for i in range(1, len(marks)):
         marks[i] = min(max(marks[i], marks[i - 1]), end)
     speeds = [prompt_speed, motion_speed, prompt_speed, motion_speed, prompt_speed]
@@ -71,10 +70,15 @@ def main():
     args = ap.parse_args()
     with open(os.path.join(args.rec, 'events.json')) as f:
         ev = json.load(f)
-    webm = sorted(glob.glob(os.path.join(args.rec, 'ui', '*.webm')))[-1]
     t0, t1 = ev['page'], ev['end']
+    webm = sorted(glob.glob(os.path.join(args.rec, 'ui', '*.webm')))        # older recordings: Playwright's video
+    if webm:
+        ui_in = ['-i', webm[-1]]
+    else:                                                                   # screencast frames
+        ui_in = ['-f', 'concat', '-safe', '0', '-i', os.path.join(args.rec, 'ui_frames.txt')]
+        frames_concat(os.path.join(args.rec, 'ui'), t0, t1, ui_in[-1])
     concat = os.path.join(args.rec, 'sim_frames.txt')
-    sim_concat(os.path.join(args.rec, 'sim'), t0, t1, concat)
+    frames_concat(os.path.join(args.rec, 'sim'), t0, t1, concat)
 
     stack = ('[0:v]fps=30,trim=start={lead},setpts=PTS-STARTPTS,scale={w}:-2:flags=lanczos[ui];'
              '[1:v]fps=30,trim=start={lead},setpts=PTS-STARTPTS,scale={w}:-2:flags=lanczos[sim];'
@@ -88,9 +92,10 @@ def main():
         segs = segments(ev, start, t1 - start, args.hold, args.prompt_speed, args.motion_speed)
         name = 'demo_%gx-%gx' % (args.prompt_speed, args.motion_speed)
         if args.split:
-            cut = ev['text_done'] - start
-            parts = [(name + '_text.gif', [s for s in segs if s[1] <= cut + 1e-3]),
-                     (name + '_image.gif', [s for s in segs if s[0] >= cut - 1e-3])]
+            order = ev.get('order', ['text', 'image'])
+            cut = ev[order[0] + '_done'] - start
+            parts = [('%s_%s.gif' % (name, order[0]), [s for s in segs if s[1] <= cut + 1e-3]),
+                     ('%s_%s.gif' % (name, order[1]), [s for s in segs if s[0] >= cut - 1e-3])]
         else:
             parts = [(name + '.gif', segs)]
         for out, part in parts:
@@ -106,7 +111,7 @@ def main():
 
     for name, graph, secs in jobs:
         out = os.path.join(args.rec, name)
-        subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', webm,
+        subprocess.run(['ffmpeg', '-y', '-loglevel', 'error'] + ui_in + [
                         '-f', 'concat', '-safe', '0', '-i', concat,
                         '-filter_complex', graph, out], check=True)
         print('%s  ~%.0f s  %.1f MB' % (out, secs, os.path.getsize(out) / 1e6), flush=True)
