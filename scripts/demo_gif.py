@@ -1,11 +1,12 @@
 """Stack the sim's view (top) and the prompt UI recording (bottom) on one timeline, speed it up, and make GIFs (D-045).
 
   .venv/bin/python scripts/demo_gif.py [--speeds 2 3 4] [--width 800] [--fps 10] [--colors 256] [--dither bayer]
-  .venv/bin/python scripts/demo_gif.py --motion-speed 8 [--prompt-speed 1.5] [--hold 4]
+  .venv/bin/python scripts/demo_gif.py --motion-speed 8 [--prompt-speed 1.5] [--hold 4] [--split]
 
 --motion-speed makes one GIF with a variable speed instead (D-046): the prompting (page load, typing / choosing the
-image, and --hold s after Go for the detection) at --prompt-speed, each task at --motion-speed.
-For a README GIF under 10 MB: --width 640 --colors 64 --dither none.
+image, and --hold s after Go for the detection) at --prompt-speed, each task at --motion-speed. --split cuts it
+after the text prompt's task into two GIFs, *_text.gif and *_image.gif.
+For the README GIFs (~10 MB each, UI text readable): --split --width 1280 --colors 48 --fps 8 --dither none.
 
 Inputs from scripts/record_demo.py and sim/ros_cell.py --record: output/rec/{ui/*.webm, sim/<wall ms>.jpg,
 events.json}. The sim frames are named by wall time, so they line up with the page's video (which starts at
@@ -66,6 +67,7 @@ def main():
     ap.add_argument('--motion-speed', type=float, help='variable speed: the tasks at this speed (one GIF)')
     ap.add_argument('--prompt-speed', type=float, default=1.5, help='variable speed: the prompting at this speed')
     ap.add_argument('--hold', type=float, default=4, help='variable speed: s after Go still at --prompt-speed')
+    ap.add_argument('--split', action='store_true', help='variable speed: one GIF per prompt (_text, _image)')
     args = ap.parse_args()
     with open(os.path.join(args.rec, 'events.json')) as f:
         ev = json.load(f)
@@ -82,13 +84,21 @@ def main():
           '[b][p]paletteuse=dither={dither}:diff_mode=rectangle'.format(fps=args.fps, colors=args.colors, dither=dither)
     jobs = []
     if args.motion_speed:
-        segs = segments(ev, t0 + args.lead, t1 - t0 - args.lead, args.hold, args.prompt_speed, args.motion_speed)
-        graph = stack + ',split=%d%s;' % (len(segs), ''.join('[s%d]' % i for i in range(len(segs))))
-        for i, (a, b, v) in enumerate(segs):
-            graph += '[s%d]trim=start=%.3f:end=%.3f,setpts=(PTS-STARTPTS)/%g,%s[c%d];' % (i, a, b, v, badge(v), i)
-        graph += ''.join('[c%d]' % i for i in range(len(segs))) + 'concat=n=%d:v=1:a=0' % len(segs) + gif
-        jobs.append(('demo_%gx-%gx.gif' % (args.prompt_speed, args.motion_speed), graph,
-                     sum((b - a) / v for a, b, v in segs)))
+        start = t0 + args.lead
+        segs = segments(ev, start, t1 - start, args.hold, args.prompt_speed, args.motion_speed)
+        name = 'demo_%gx-%gx' % (args.prompt_speed, args.motion_speed)
+        if args.split:
+            cut = ev['text_done'] - start
+            parts = [(name + '_text.gif', [s for s in segs if s[1] <= cut + 1e-3]),
+                     (name + '_image.gif', [s for s in segs if s[0] >= cut - 1e-3])]
+        else:
+            parts = [(name + '.gif', segs)]
+        for out, part in parts:
+            graph = stack + ',split=%d%s;' % (len(part), ''.join('[s%d]' % i for i in range(len(part))))
+            for i, (a, b, v) in enumerate(part):
+                graph += '[s%d]trim=start=%.3f:end=%.3f,setpts=(PTS-STARTPTS)/%g,%s[c%d];' % (i, a, b, v, badge(v), i)
+            graph += ''.join('[c%d]' % i for i in range(len(part))) + 'concat=n=%d:v=1:a=0' % len(part) + gif
+            jobs.append((out, graph, sum((b - a) / v for a, b, v in part)))
     else:
         for speed in args.speeds:
             jobs.append(('demo_%gx.gif' % speed, stack + ',setpts=PTS/%g,%s' % (speed, badge(speed)) + gif,
