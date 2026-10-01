@@ -470,6 +470,7 @@ Image tabs and the "Found" line can't be read on GitHub, and the text vs. visual
 `demo_gif.py --split` cuts the same recording after the text prompt's task into `docs/demo_text.gif` and
 `docs/demo_image.gif`, each under its own heading in the README (visual prompt first); at `--width 1280 --colors 48 --fps 8 --dither none` (the sim at its
 native width, the UI at 0.8×) they are 10.3 and 11.1 MB. Supersedes the single GIF of [D-046](#d-046).
+Text prompt first again, in recording order: the visual-prompt clip opens on the end of the text pick.
 
 ## Issues
 
