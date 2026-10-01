@@ -127,6 +127,19 @@ docker compose -f docker/compose.yaml run --rm task  # terminal 2, once terminal
 | **First start** | ~2 min to build the TensorRT engines and a few more for Isaac Sim's shaders. Both are kept in Docker volumes, so later starts are fast |
 | **Changing code** | Every change needs an image rebuild (step 2), which is slow. Develop natively; use Docker to deploy |
 
+**Data and model weights.** Meshes and weights are not in git; both install paths download them, so nothing is
+fetched by hand for the robot. Docker needs network access during `build`.
+
+| What | Where | Source | Native | Docker |
+|---|---|---|---|---|
+| YCB meshes (6 objects), centred and yaw-aligned | `assets/ycb/` | [YCB benchmark](https://www.ycbbenchmarks.com/) google_16k scans (`scripts/prepare_ycb.py`) | `assets` step | baked into both images at `build` |
+| YOLOE weights + MobileCLIP text encoder | `models/` | Ultralytics releases | `assets` step; any other `weights` in `config.yaml` downloads on first use | baked into the app image at `build` |
+| FoundationPose ONNX models | `models/isaac_ros/foundationpose/` | NGC, `nvidia/isaac/foundationpose` 1.0.1 (`docker/fp_run.sh`) | `fp` step | first start of `foundationpose`, kept in the `fp-engines` volume |
+| FoundationPose TensorRT engines | same | built for your GPU by `trtexec` | `fp` step | same |
+
+Only NVlabs' mustard0 sequence, used by the scripted run in [Vision playgrounds](#vision-playgrounds-each-stage-on-its-own),
+is fetched by hand.
+
 ## Vision playgrounds (each stage on its own)
 
 **Not part of the robot pipeline.** Each command runs one vision algorithm by itself on a stored RGB-D scene: no
@@ -145,6 +158,19 @@ python pipeline/interactive_place.py                                # 5 place (n
 
 Stage 2's playground runs NVlabs' research FoundationPose in a container named `foundationpose` that
 `scripts/install.sh` does not set up yet; the robot uses Isaac ROS FoundationPose instead and doesn't need it.
+
+**mustard0, by hand.** The scripted run (`pipeline/01_detect.py` … `04_grasp.py`) reads NVlabs' mustard0 sequence
+from `third_party/FoundationPose/demo_data/mustard0/`. It is shared only as a Google Drive folder, so no script
+fetches it:
+
+```bash
+git clone https://github.com/NVlabs/FoundationPose third_party/FoundationPose
+```
+
+Then download `mustard0` from NVlabs'
+[demo data](https://drive.google.com/drive/folders/1pRyFmxYXmAnpku7nGRioZaKrVJtIsroP?usp=sharing) and extract it
+under `third_party/FoundationPose/demo_data/`. The `interactive_*.py` playgrounds don't need it: they use the scene in
+`data/` (in git) or a sim capture.
 
 ## Run the robot
 
@@ -328,7 +354,7 @@ source ros2/install/setup.bash && ros2 launch ppp_bringup all.launch.py eval:=tr
 | `ui/` | Prompt UI: web page to prompt the robot with a phrase or an example image (`prompt_ui.py`) |
 | `config.yaml` | Every tunable parameter, per stage and for the sim |
 | `data/` | Multi-object RGB-D scene (BOP YCB-Video) + reference crops; sim captures (generated) |
-| `scripts/` | `install.sh` (everything, one script), YCB mesh preparation |
+| `scripts/` | `install.sh` (everything, one script), YCB mesh download + preparation |
 | `docs/` | Stage guides, sim guide, decision log, figures |
 | `tests/` | Unit tests for `vision/` + C++/numpy RANSAC equivalence (`pytest`, no GPU) |
 

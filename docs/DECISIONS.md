@@ -61,6 +61,7 @@ along the way. Newest entries go at the bottom of each list.
 | [D-046](#d-046) | 2026-09-30 | Demo GIF at a variable speed: the prompting slow, the robot fast | Accepted |
 | [D-047](#d-047) | 2026-10-01 | README demo as two GIFs (text prompt, visual prompt) at 1280 px so the prompt UI is readable | Accepted |
 | [D-048](#d-048) | 2026-10-01 | Demo re-recorded sharp: UI screencast frames at a 1280 px layout, sim at 1080p; prompt UI as SVG | Accepted |
+| [D-049](#d-049) | 2026-10-01 | README documents where meshes and weights come from; mustard0 demo data stays a manual download | Accepted |
 
 ### D-001
 **Keep YOLOE-seg (not OWLv2 + SAM2).** One `ultralytics` model gives box + mask in a single pass and was
@@ -483,6 +484,17 @@ the visual prompt first; `demo_gif.py` follows `events.json` `order`. GIFs at `-
 --dither none`: 9.3 MB (image) and 12.8 MB (text). The README's UI screenshot is now `docs/ui/prompt_ui.svg`
 (`scripts/ui_svg.py`, taken by `record_demo.py` after the first pick): boxes and text as vectors, with `textLength` so
 they keep their width in any font, and the images embedded as JPEGs from a 2× screenshot (134 KB).
+
+### D-049
+**Data and weights documented; mustard0 stays manual.** Nothing outside git was explained in the README, so it was
+unclear whether a fresh clone needs manual downloads. It doesn't for the robot: `install.sh assets` fetches the YCB
+meshes (`prepare_ycb.py`, YCB S3) and YOLOE + MobileCLIP (Ultralytics), `install.sh fp` fetches FoundationPose's ONNX
+models from NGC and builds the engines, and Docker does the same (assets baked in at `build`, ONNX + engines on the
+`foundationpose` service's first start, kept in `fp-engines`). The README's Install section now has a table of each
+asset, its source and which step fetches it. The one gap is the scripted run (`pipeline/01_detect.py` … `04_grasp.py`),
+which reads NVlabs' mustard0 from `third_party/FoundationPose/demo_data/`: NVlabs shares it only as a Google Drive
+folder, which can't be fetched reliably by a script (gdown on folders breaks on quota and listing limits), so the README
+gives the clone + download steps instead of `install.sh` fetching it. The `interactive_*.py` playgrounds don't need it.
 
 ## Issues
 
