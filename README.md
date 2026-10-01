@@ -145,11 +145,11 @@ report and writes an annotated image to `output/`.
 
 ```bash
 source .venv/bin/activate
-python pipeline/interactive_detect.py --ref 006_mustard_bottle     # 1 detect
-python pipeline/interactive_pose.py                                 # 2 pose (needs the NVlabs container, below)
-python pipeline/interactive_spatial.py                              # 3 table + free space
-python pipeline/interactive_grasp.py                                # 4 grasp
-python pipeline/interactive_place.py                                # 5 place (needs the sim capture below)
+python pipeline/01_detect.py --ref 006_mustard_bottle     # 1 detect
+python pipeline/02_pose.py                                 # 2 pose (needs the NVlabs container, below)
+python pipeline/03_spatial.py                              # 3 table + free space
+python pipeline/04_grasp.py                                # 4 grasp
+python pipeline/05_place.py                                # 5 place (needs the sim capture below)
 .venv-sim/bin/python sim/scene.py                                   # Isaac Sim: RGB-D + ground truth -> data/sim/
 ```
 
@@ -331,7 +331,7 @@ source ros2/install/setup.bash && ros2 launch ppp_bringup all.launch.py eval:=tr
 | Path | Contents |
 |---|---|
 | `vision/` | The algorithms: `detect`, `pose`, `spatial`, `grasp`, `place`, `transforms` |
-| `pipeline/` | Offline stage playgrounds (`interactive_detect.py` … `interactive_place.py`); not used by the robot |
+| `pipeline/` | Offline stage playgrounds (`01_detect.py` … `05_place.py`); not used by the robot |
 | `sim/` | Isaac Sim cell (`cell.py`): dataset capture (`scene.py`), live over ROS 2 (`ros_cell.py`), episodes |
 | `ros2/src/` | ROS 2 packages: `ppp_interfaces`, `ppp_geometry` (C++ RANSAC + pybind11), `ppp_spatial`, `ppp_perception`, `ppp_task` (behavior tree), `ppp_bringup` |
 | `docker/` | Images (FoundationPose; deployment), `compose.yaml`, FoundationPose start scripts |

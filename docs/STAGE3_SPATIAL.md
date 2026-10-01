@@ -6,12 +6,12 @@ Cursor terminal on the workstation, host `.venv` (numpy + OpenCV only, no GPU, n
 
 ```bash
 source .venv/bin/activate                                                       # once per terminal
-python pipeline/interactive_spatial.py                                          # config.yaml defaults
-python pipeline/interactive_spatial.py --resolution 0.02 --tag coarse           # 2 cm cells
-python pipeline/interactive_spatial.py --height-thresh 0.03 --tag thresh3cm     # ignore anything < 3 cm tall
-python pipeline/interactive_spatial.py --ransac-dist 0.002 --tag tight          # stricter "on the table"
-python pipeline/interactive_spatial.py --ransac-iters 5 --tag few               # fewer RANSAC tries
-python pipeline/interactive_spatial.py --help
+python pipeline/03_spatial.py                                          # config.yaml defaults
+python pipeline/03_spatial.py --resolution 0.02 --tag coarse           # 2 cm cells
+python pipeline/03_spatial.py --height-thresh 0.03 --tag thresh3cm     # ignore anything < 3 cm tall
+python pipeline/03_spatial.py --ransac-dist 0.002 --tag tight          # stricter "on the table"
+python pipeline/03_spatial.py --ransac-iters 5 --tag few               # fewer RANSAC tries
+python pipeline/03_spatial.py --help
 ```
 Prints a report, saves `output/spatial/<tag>.png` (4 panels), opens it as a Cursor tab.
 

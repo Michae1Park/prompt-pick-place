@@ -61,7 +61,8 @@ along the way. Newest entries go at the bottom of each list.
 | [D-046](#d-046) | 2026-09-30 | Demo GIF at a variable speed: the prompting slow, the robot fast | Accepted |
 | [D-047](#d-047) | 2026-10-01 | README demo as two GIFs (text prompt, visual prompt) at 1280 px so the prompt UI is readable | Accepted |
 | [D-048](#d-048) | 2026-10-01 | Demo re-recorded sharp: UI screencast frames at a 1280 px layout, sim at 1080p; prompt UI as SVG | Accepted |
-| [D-049](#d-049) | 2026-10-01 | README documents where meshes and weights come from; mustard0 demo data stays a manual download | Accepted |
+| [D-049](#d-049) | 2026-10-01 | README documents where meshes and weights come from; mustard0 demo data stays a manual download | Superseded by D-050 (mustard0); data and weights docs still Accepted |
+| [D-050](#d-050) | 2026-10-01 | Scripted mustard0 run removed; the playgrounds take its numbered names (`01_detect.py` … `05_place.py`) | Accepted |
 
 ### D-001
 **Keep YOLOE-seg (not OWLv2 + SAM2).** One `ultralytics` model gives box + mask in a single pass and was
@@ -495,6 +496,17 @@ asset, its source and which step fetches it. The one gap is the scripted run (`p
 which reads NVlabs' mustard0 from `third_party/FoundationPose/demo_data/`: NVlabs shares it only as a Google Drive
 folder, which can't be fetched reliably by a script (gdown on folders breaks on quota and listing limits), so the README
 gives the clone + download steps instead of `install.sh` fetching it. The `interactive_*.py` playgrounds don't need it.
+
+### D-050
+**Scripted mustard0 run removed; playgrounds numbered.** `pipeline/01_detect.py` … `04_grasp.py` and `run_all.sh` were
+the first pass at stages 1–4, on NVlabs' mustard0 sequence. The `interactive_*.py` playgrounds replaced them on
+`data/multi_object_scene/` (in git), and nothing else used them, so [D-049](#d-049)'s manual Google Drive download was
+only there to keep dead scripts runnable. Removed: the four scripts, `run_all.sh`, `interactive_pose.py`'s `--mask
+stage1` (read `01_detect.py`'s output) and its mustard0 defaults, the notebook's optional mustard0 frames, and the
+README's download steps. The stage number in the name reads better, so the playgrounds took the freed names:
+`interactive_{detect,pose,spatial,grasp,place}.py` → `01_detect.py` … `05_place.py` (older entries keep the old
+names). `02_pose.py` now re-runs itself in the container by absolute path, so it works from any directory. With this, a
+fresh clone needs no manual downloads for the robot or the playgrounds except stage 2's NVlabs container.
 
 ## Issues
 

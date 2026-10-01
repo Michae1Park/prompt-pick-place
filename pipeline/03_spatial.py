@@ -2,8 +2,8 @@
 """Stage 3 playground: depth -> point cloud -> table plane (RANSAC) -> occupancy grid, on the stage 1 image.
 Guide: docs/STAGE3_SPATIAL.md. Host .venv (numpy + OpenCV only).
 
-  python pipeline/interactive_spatial.py                         # config.yaml `spatial:` defaults
-  python pipeline/interactive_spatial.py --resolution 0.02 --height-thresh 0.03 --tag coarse
+  python pipeline/03_spatial.py                         # config.yaml `spatial:` defaults
+  python pipeline/03_spatial.py --resolution 0.02 --height-thresh 0.03 --tag coarse
 
 Writes output/spatial/<tag>.png (2x2 panels) and opens it in Cursor.
 """

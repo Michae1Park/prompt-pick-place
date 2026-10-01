@@ -2,10 +2,10 @@
 """Stage 4 playground: stage 2 pose + stage 3 table -> parallel-jaw grasp candidates -> filter, on the stage 1 image.
 Guide: docs/STAGE4_GRASP.md. Host .venv (numpy + OpenCV only).
 
-  python pipeline/interactive_grasp.py                        # config.yaml `gripper:` + `grasp:` defaults
-  python pipeline/interactive_grasp.py --max-tilt 100 --tag side
+  python pipeline/04_grasp.py                        # config.yaml `gripper:` + `grasp:` defaults
+  python pipeline/04_grasp.py --max-tilt 100 --tag side
 
-Needs output/pose/<--pose>.json from interactive_pose.py. Writes output/grasp/<tag>.png and opens it in Cursor.
+Needs output/pose/<--pose>.json from 02_pose.py. Writes output/grasp/<tag>.png and opens it in Cursor.
 """
 import argparse
 import json

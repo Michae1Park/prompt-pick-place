@@ -6,12 +6,12 @@ Cursor terminal on the workstation. The script re-runs itself inside the `founda
 
 ```bash
 source .venv/bin/activate                                                        # once per terminal
-python pipeline/interactive_pose.py                                              # defaults
-python pipeline/interactive_pose.py --iterations 1 --tag it1                     # fewer refinement steps
-python pipeline/interactive_pose.py --iterations 10 --tag it10                   # more refinement steps
-python pipeline/interactive_pose.py --n-views 10 --inplane-step 120 --tag coarse # fewer hypotheses
-python pipeline/interactive_pose.py --top 20                                     # print more hypotheses
-python pipeline/interactive_pose.py --help
+python pipeline/02_pose.py                                              # defaults
+python pipeline/02_pose.py --iterations 1 --tag it1                     # fewer refinement steps
+python pipeline/02_pose.py --iterations 10 --tag it10                   # more refinement steps
+python pipeline/02_pose.py --n-views 10 --inplane-step 120 --tag coarse # fewer hypotheses
+python pipeline/02_pose.py --top 20                                     # print more hypotheses
+python pipeline/02_pose.py --help
 ```
 Prints a report, saves `output/pose/<tag>.{png,json}`, opens the image as a Cursor tab.
 
